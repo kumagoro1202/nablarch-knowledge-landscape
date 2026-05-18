@@ -274,3 +274,5 @@ Nablarch関連リポジトリを以下に整理する（Fintan-contentsは全般
 | 開発ツール・プロジェクト基盤 | 27 |
 | AI・ナレッジ関連 | 4 |
 | Fintan-contents Nablarch関連 | 3 |
+
+※ テスト用・テンプレート用リポジトリ（dependabot-alert-test, nablarch-plugins-bundle-test, nablarch-ui-build-test-pj, master）は除外。
