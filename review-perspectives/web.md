@@ -10,7 +10,7 @@
 
 **観点詳細**: Nablarch Web アプリケーションのハンドラキュー（`web-component-configuration.xml` 等）に、必須ハンドラが適切な順序で登録されているか確認する。ハンドラの順序が誤ると認証バイパスや例外ハンドリング漏れが発生する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/feature_details/handler_queue.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/feature_details.html
 
 **優先度**: MUST
 
@@ -49,7 +49,7 @@
 
 **観点詳細**: `SessionUtil` を使ったセッション操作が適切か確認する。セッションへの不要な大容量データの格納、タイムアウト未設定、セッション固定攻撃への対策が実装されているか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/session_store/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/session_store.html
 
 **優先度**: MUST
 
@@ -81,7 +81,7 @@ SessionUtil.put(context, "loginUser", user); // 新セッションに格納
 
 **観点詳細**: POST/PUT/DELETE 等の更新系リクエストに対して CSRF トークンの検証が実装されているか。カスタムハンドラ等でバイパスされていないか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/feature_details/csrf_token_handler.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/feature_details.html#csrf
 
 **優先度**: MUST
 
@@ -117,7 +117,7 @@ SessionUtil.put(context, "loginUser", user); // 新セッションに格納
 
 **観点詳細**: クライアントサイドバリデーションのみに依存せず、サーバーサイドで `ValidationUtil.validate()` または Bean Validation が実装されているか確認する。バリデーションエラー時のユーザー向けメッセージが適切か確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/validation/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/validation.html
 
 **優先度**: MUST
 
@@ -154,7 +154,7 @@ public HttpResponse doPost(HttpRequest req, ExecutionContext ctx) {
 
 **観点詳細**: 業務フローの正常遷移だけでなく、バリデーションエラー・システムエラー・認証エラー・404 等の異常系画面が全て定義され、適切なユーザーメッセージが表示されるか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/feature_details/forwarding_resource.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/feature_details.html
 
 **優先度**: Should
 
@@ -230,7 +230,7 @@ public HttpResponse doPost(HttpRequest req, ExecutionContext ctx) {
 
 **観点詳細**: JSP でユーザー入力・DB データを HTML 出力する際に、Nablarch のカスタムタグ（`<n:write>` 等）または JSTL の `<c:out>` でエスケープされているか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/tag_reference/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/tag.html
 
 **優先度**: MUST
 
@@ -297,7 +297,7 @@ List<User> users = UniversalDao.findAllBySqlFile(User.class, "FIND_BY_NAME", con
 
 **観点詳細**: 認証が必要なページ・アクションに対して、未認証アクセスが適切にリダイレクトされるか確認する。認可（権限チェック）が必要な機能に対してロールチェックが実装されているか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/permission_check/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/permission_check.html
 
 **優先度**: MUST
 
@@ -332,7 +332,7 @@ public HttpResponse doGet(HttpRequest req, ExecutionContext ctx) {
 
 **観点詳細**: 更新フォームの二重サブミット（ダブルクリック・ブラウザ戻るボタン）を防ぐトークン機構が実装されているか確認する。Nablarch の `DoubleSubmissionHandler` 等の使用を確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/feature_details/double_submission.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/feature_details.html
 
 **優先度**: Should
 
@@ -367,7 +367,7 @@ public HttpResponse doGet(HttpRequest req, ExecutionContext ctx) {
 
 **観点詳細**: ファイルアップロード機能でサイズ上限・許可拡張子の検証が実装されているか確認する。悪意あるファイル（スクリプト等）のアップロードを防止する設計か確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/feature_details/file_upload.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/feature_details.html
 
 **優先度**: Must
 
@@ -463,7 +463,7 @@ List<User> users = UniversalDao.findAllBySqlFile(
 
 **観点詳細**: ウェブアクションのテストが `HttpRequestTestSupport` を使って実装されているか確認する。リクエスト送信・レスポンス検証・セッション状態の確認がテストで行われているか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/development_tools/testing_framework/guide/testing-guide/web/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/development_tools/testing_framework/guide/development_guide/05_UnitTestGuide/02_RequestUnitTest/index.html
 
 **優先度**: Should
 
@@ -498,7 +498,7 @@ public class UserActionTest extends HttpRequestTestSupport {
 
 **観点詳細**: レスポンスに適切なセキュリティ HTTP ヘッダが設定されているか確認する。クリックジャッキング・MIME スニッフィングへの対策が実装されているか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/feature_details/csrf_token_handler.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/feature_details.html#csrf
 
 **優先度**: Should
 
@@ -531,7 +531,7 @@ response.setHeader("X-Content-Type-Options", "nosniff");
 
 **観点詳細**: ログアウト処理でセッションが完全に破棄され（`SessionUtil.invalidate()`）、ログアウト後にブラウザの戻るボタンで保護リソースにアクセスできないか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/session_store/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/session_store.html
 
 **優先度**: MUST
 

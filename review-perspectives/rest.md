@@ -88,7 +88,7 @@ public Response createUser(UserForm form) {
 
 **観点詳細**: 業務例外・システム例外が統一されたエラーレスポンス形式に変換されているか確認する。`ExceptionMapper` の実装または Nablarch の例外ハンドリングハンドラが設定されているか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web_service/rest/feature_details/error_response.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web_service/rest/feature_details.html
 
 **優先度**: MUST
 
@@ -170,7 +170,7 @@ paths:
 
 **観点詳細**: REST API の認証が適切に実装されているか確認する。認証トークン（JWT 等）の検証、有効期限チェック、権限チェックが全保護エンドポイントに適用されているか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/permission_check/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/permission_check.html
 
 **優先度**: MUST
 
@@ -210,7 +210,7 @@ public List<User> getAdminUsers() {
 
 **観点詳細**: バリデーションエラー・認証エラー・システムエラーのレスポンス JSON 形式が全 API エンドポイントで統一されているか確認する。クライアントが一元的にエラー処理できるフォーマットか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web_service/rest/feature_details/error_response.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web_service/rest/feature_details.html
 
 **優先度**: MUST
 
@@ -250,7 +250,7 @@ public List<User> getAdminUsers() {
 
 **観点詳細**: JSON リクエストボディに対するバリデーションが Bean Validation (`@NotNull`, `@Size` 等) または Nablarch バリデーションで実装されているか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web_service/rest/feature_details/validation.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web_service/rest/feature_details.html
 
 **優先度**: MUST
 
@@ -408,7 +408,7 @@ public Response deleteUser(@PathParam("id") Long id) {
 
 **観点詳細**: ブラウザからの AJAX リクエストを受け付ける REST API で、CORS 設定（`Access-Control-Allow-Origin` 等）が適切か確認する。ワイルドカード `*` による全オリジン許可になっていないか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web_service/rest/feature_details/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web_service/rest/feature_details.html
 
 **優先度**: Should
 
@@ -441,7 +441,7 @@ if (ALLOWED_ORIGINS.contains(origin)) {
 
 **観点詳細**: REST API のリクエスト（メソッド・パス・パラメータ）とレスポンス（ステータスコード・処理時間）がログに記録されているか確認する。機密情報がログに含まれていないか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/log/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/log.html
 
 **優先度**: Should
 
@@ -473,7 +473,7 @@ log.info("API: {} {} status={} time={}ms",
 
 **観点詳細**: 特定クライアントからの過剰なリクエストを制限する仕組みが設計されているか確認する。外部向け API では特に重要。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web_service/rest/feature_details/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web_service/rest/feature_details.html
 
 **優先度**: May
 
@@ -571,7 +571,7 @@ GET /api/v2/users   # 新フォーマット
 
 **観点詳細**: REST API のエンドポイントに対して、Nablarch TestSupport や RestAssured 等を使ったテストが実装されているか確認する。正常系・バリデーションエラー・認証エラーのテストが存在するか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/development_tools/testing_framework/guide/testing-guide/rest_api/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/development_tools/testing_framework/guide/development_guide/05_UnitTestGuide/02_RequestUnitTest/index.html
 
 **優先度**: Should
 

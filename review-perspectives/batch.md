@@ -83,7 +83,7 @@ try {
 
 **観点詳細**: バッチのコミット間隔（`commitInterval`）がコンポーネント定義で正しく設定されているか。大量データを1トランザクションで処理するとロールバック時の影響が甚大になる。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/batch/nablarch_batch/feature_details/transaction_control.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/batch/nablarch_batch/feature_details.html
 
 **優先度**: MUST
 
@@ -115,7 +115,7 @@ try {
 
 **観点詳細**: 一時的なエラー（デッドロック・タイムアウト等）に対するリトライ制御と、スキップ可能エラーの定義が適切か確認する。無限リトライや全件スキップが起きない設計であることを確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/batch/nablarch_batch/feature_details/error_handling.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/batch/nablarch_batch/feature_details.html
 
 **優先度**: MUST
 
@@ -217,7 +217,7 @@ public Record read(ExecutionContext ctx) {
 
 **観点詳細**: バッチが途中で停止した場合に、どこから再開するかのチェックポイント設計が存在するか。無設計の場合、全件再処理でデータ二重登録が発生する可能性がある。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/batch/nablarch_batch/feature_details/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/batch/nablarch_batch/feature_details.html
 
 **優先度**: Should
 
@@ -248,7 +248,7 @@ SELECT * FROM batch_target WHERE status = 'UNPROCESSED'
 
 **観点詳細**: バッチ開始/終了・処理件数・エラー発生をログに記録しているか。ログレベルが適切（INFO/WARN/ERROR）で、本番運用に耐えるフォーマットか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/log/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/log.html
 
 **優先度**: Should
 
@@ -278,7 +278,7 @@ log.logInfo("バッチ完了", "処理件数: " + count);
 
 **観点詳細**: バッチ入力データ（ファイル・DB）に対するバリデーションが実装されているか。バリデーションエラーレコードの扱い（スキップ・エラーファイル出力）が仕様通りか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/validation/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/validation.html
 
 **優先度**: Should
 
@@ -309,7 +309,7 @@ dao.insert(record);
 
 **観点詳細**: 同一バッチジョブが同時に複数起動された場合に、二重処理が発生しない排他制御が実装されているか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/exclusive_control/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/exclusive_control.html
 
 **優先度**: Should
 
@@ -344,7 +344,7 @@ try {
 
 **観点詳細**: ファイル形式の入出力で文字コード（UTF-8/Shift-JIS 等）が明示的に指定されているか。デフォルトエンコーディングに依存していると OS・JVM 設定によって文字化けが発生する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/data_io/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/data_io/data_format.html
 
 **優先度**: MUST
 
@@ -410,7 +410,7 @@ catch (SystemException e) {
 
 **観点詳細**: バッチ完了後に処理件数・スキップ件数・エラー件数が記録・出力されているか。運用チームがバッチ結果を確認できるレポーティング設計か確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/batch/nablarch_batch/feature_details/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/batch/nablarch_batch/feature_details.html
 
 **優先度**: Should
 
@@ -448,7 +448,7 @@ log.info("完了: 処理=" + processed + " スキップ=" + skipped);
 
 **観点詳細**: バッチアクションのユニットテストが `NablarchTestSupport` または `BatchRequestTestSupport` を使って作成されているか。DBUnit との組み合わせでデータ駆動テストが実現されているか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/development_tools/testing_framework/guide/testing-guide/batch/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/development_tools/testing_framework/guide/development_guide/05_UnitTestGuide/02_RequestUnitTest/index.html
 
 **優先度**: Should
 
@@ -544,7 +544,7 @@ required: true
 
 **観点詳細**: バッチの処理時間が業務 SLA（処理ウィンドウ）に収まる設計になっているか。ボトルネック（DB I/O・外部連携）の分析と改善策が検討されているか確認する。
 
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/batch/nablarch_batch/feature_details/index.html
+**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/batch/nablarch_batch/feature_details.html
 
 **優先度**: Should
 
