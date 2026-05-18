@@ -245,17 +245,52 @@ Nablarch関連リポジトリを以下に整理する（Fintan-contentsは全般
 
 ---
 
-## 補足: nablarch-development-standards について
+## nablarch-development-standards Organization（開発標準・規約）
 
-タスク定義では `nablarch/nablarch-development-standards` リポジトリの調査が指定されていたが、**2026-05-18時点でこのリポジトリは nablarch GitHub Organization に存在しない**。
+出典: https://github.com/nablarch-development-standards
 
-- `gh repo list nablarch --limit 200` で 120+ リポジトリを確認したが、development-standards という名称のリポジトリはなし
-- `gh api repos/nablarch/nablarch-development-standards` も 404 応答
+**nablarch org とは独立した別の GitHub Organization**（親子・傘下関係なし）。
 
-開発標準に相当するコンテンツは以下に分散して提供されていると推定される:
-- **Fintan-contents/nablarch-system-development-guide** — システム開発ガイド（プロセス・成果物標準）
-- **nablarch-document** — フレームワーク公式ドキュメント（実装ガイド）
-- **nablarch-unpublished-api-checker** — コーディング標準準拠チェックツール
+調査コマンド: `gh repo list nablarch-development-standards --limit 100`
+
+### nablarch-development-standards
+
+| 項目 | 内容 |
+|------|------|
+| URL | https://github.com/nablarch-development-standards/nablarch-development-standards |
+| 種別 | 開発プロセス標準・アプリケーション開発標準 |
+| 対象読者 | Nablarchプロジェクトのアーキテクト・開発者 |
+| 最終更新 | 2024-09 |
+| 役割サマリ | 開発プロセス標準・アプリケーション開発標準・設計ドキュメントテンプレートを提供。 |
+
+### nablarch-style-guide
+
+| 項目 | 内容 |
+|------|------|
+| URL | https://github.com/nablarch-development-standards/nablarch-style-guide |
+| 種別 | コーディングスタイルガイド |
+| 対象読者 | Nablarchプロジェクトの開発者 |
+| 最終更新 | 2022-10 |
+| 役割サマリ | Nablarchプロジェクト向けのコーディングスタイルガイド。 |
+
+### nablarch-development-standards-tools
+
+| 項目 | 内容 |
+|------|------|
+| URL | https://github.com/nablarch-development-standards/nablarch-development-standards-tools |
+| 種別 | 開発標準適用支援ツール |
+| 対象読者 | Nablarchプロジェクトのアーキテクト・開発者 |
+| 最終更新 | 2025-01 |
+| 役割サマリ | 開発標準の適用を支援するツール群。 |
+
+---
+
+## 補足: nablarch org 内の nablarch-development-standards リポジトリについて
+
+`nablarch/nablarch-development-standards`（nablarch org 内のリポジトリパス）は存在しない（404）。これは `nablarch-development-standards` が nablarch org の一部ではなく、独立した別 Organization であるため。
+
+- `gh api repos/nablarch/nablarch-development-standards` → 404 応答（正しい動作）
+- 正しい URL: https://github.com/nablarch-development-standards（独立 org）
 
 ---
 
@@ -274,5 +309,6 @@ Nablarch関連リポジトリを以下に整理する（Fintan-contentsは全般
 | 開発ツール・プロジェクト基盤 | 27 |
 | AI・ナレッジ関連 | 4 |
 | Fintan-contents Nablarch関連 | 3 |
+| nablarch-development-standards org | 3 |
 
 ※ テスト用・テンプレート用リポジトリ（dependabot-alert-test, nablarch-plugins-bundle-test, nablarch-ui-build-test-pj, master）は除外。
