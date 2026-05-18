@@ -20,7 +20,7 @@ flowchart TD
     Q1 -->|NO| Q2
 
     Q2{"Q2: プロジェクト横断の\n標準・規約・ガイドラインか？\n（開発プロセス・設計標準・\n成果物標準等）"}
-    Q2 -->|YES| A2["📋 Fintan-contents/\nnablarch-system-development-guide\n※nablarch-development-standardsは\n2026-05時点で非存在のため代替"]
+    Q2 -->|YES| A2["📋 nablarch-development-standards org\n（独立Organization）\nまたは Fintan-contents/\nnablarch-system-development-guide"]
     Q2 -->|NO| Q3
 
     Q3{"Q3: Nablarchを使った\n実装事例・ハウツー・体験記か？\n（公式として発信する場合）"}
@@ -66,12 +66,20 @@ flowchart TD
 - **URL**: https://github.com/nablarch/（例: nablarch-core, nablarch-fw-web, nablarch-common-dao 等）
 - **備考**: nablarch GitHub Organization に 120+ リポジトリ存在（2026-05-18時点）
 
+### 📋 GitHub: nablarch-development-standards org（開発標準・規約・コーディングルール）
+
+- **Organization**: https://github.com/nablarch-development-standards
+- **nablarch org とは独立した別組織**（親子・傘下関係なし）
+- 主要リポジトリ:
+  - [nablarch-development-standards](https://github.com/nablarch-development-standards/nablarch-development-standards): 開発プロセス標準・アプリケーション開発標準
+  - [nablarch-style-guide](https://github.com/nablarch-development-standards/nablarch-style-guide): スタイルガイド
+  - [nablarch-development-standards-tools](https://github.com/nablarch-development-standards/nablarch-development-standards-tools): 開発標準適用支援ツール
+
 ### 📋 GitHub: Fintan-contents/nablarch-system-development-guide
 
 - **対象**: 開発開始前・開発中に参照する標準・ガイドライン・プロセス定義
 - **URL**: https://github.com/Fintan-contents/nablarch-system-development-guide
 - **備考**: サンプルプロジェクト（Web/バッチ/REST）付き。⭐9（2026-05時点）
-- **注意**: `nablarch/nablarch-development-standards` は 2026-05-18時点で存在しない（404確認済み）。開発標準相当コンテンツはこのリポジトリが事実上の代替
 
 ### 📝 Fintan-contents（公式事例記事 / fintan.jp）
 
@@ -117,13 +125,21 @@ flowchart TD
 
 ## 補足: nablarch-development-standards について
 
-タスク設計段階では `nablarch/nablarch-development-standards` リポジトリが想定されていたが、
-**2026-05-18時点でこのリポジトリは nablarch GitHub Organization に存在しない**（404確認済み）。
+`nablarch-development-standards` は **nablarch org とは独立した別の GitHub Organization**（https://github.com/nablarch-development-standards）として存在する。親子・傘下関係はない。
 
-開発標準に相当するコンテンツは以下に分散して提供されている:
+なお、`nablarch/nablarch-development-standards`（nablarch org 内のリポジトリパス）は存在しない（404）。これは別の独立 org であるため。
 
-| 代替先 | URL | 役割 |
+| Organization | URL | 主な内容 |
+|---|---|---|
+| nablarch | https://github.com/nablarch | フレームワーク本体・ライブラリ |
+| nablarch-development-standards | https://github.com/nablarch-development-standards | 開発標準・規約・コーディングルール |
+| Fintan-contents | https://github.com/Fintan-contents | TIS Fintanの実装事例・拡張コンテンツ |
+
+開発標準コンテンツの主要配置先:
+
+| リポジトリ | URL | 役割 |
 |-------|-----|------|
+| nablarch-development-standards/nablarch-development-standards | https://github.com/nablarch-development-standards/nablarch-development-standards | 開発プロセス標準・アプリケーション開発標準 |
 | Fintan-contents/nablarch-system-development-guide | https://github.com/Fintan-contents/nablarch-system-development-guide | 開発プロセス・成果物標準ガイド |
 | nablarch/nablarch-document | https://github.com/nablarch/nablarch-document | フレームワーク公式ドキュメント |
 | nablarch/nablarch-unpublished-api-checker | https://github.com/nablarch/nablarch-unpublished-api-checker | コーディング標準準拠チェックツール |
