@@ -2,26 +2,17 @@
   {
     "perspective_id": "BATCH-001",
     "category": "batch",
-    "title": "ExecutionListener のライフサイクルメソッド実装確認",
-    "detail": "バッチ処理の前後処理（初期化・後処理）を担う ExecutionListener が、Nablarch の規約通りに実装されているか確認する。beforeExecute / afterExecute の両メソッドが定義され、例外発生時にリソースリークが起きない構造になっているか。",
+    "title": "カスタムExecutionListener実装時の確認（追加実装がある場合のみ）",
+    "detail": "Nablarchバッチフレームワークは標準のExecutionListenerを提供しており、通常の前後処理はFWの標準実装が担当するため、実装者がExecutionListenerをimplementsする必要はない。プロジェクト固有の前後処理（外部APIへの通知・カスタムログ出力等）でカスタムExecutionListenerを追加実装した場合のみ、その実装の妥当性を確認する。",
     "source_url": "https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/batch/nablarch_batch/getting_started/nablarch_batch/index.html",
-    "priority": "MUST",
-    "priority_reason": "ExecutionListener が不正実装だとバッチ開始・終了時の必須処理が実行されず、リソースリーク・データ不整合が発生する。",
-    "check_method": "ExecutionListener インタフェースを implements しているか。beforeExecute / afterExecute の両方が実装されているか。afterExecute で例外が発生しても後続の後処理が実行される設計か（try-finally 利用等）。",
-    "ng_example": "// afterExecute が空実装で後処理なし\npublic void afterExecute(String requestPath, ExecutionContext context) {\n    // 何もしない\n}",
-    "ok_example": "public void afterExecute(String requestPath, ExecutionContext context) {\n    try {\n        connection.close();\n    } finally {\n        LogUtil.log(\"batch finished: \" + requestPath);\n    }\n}"
-  },
-  {
-    "perspective_id": "BATCH-002",
-    "category": "batch",
-    "title": "DataReader と DataWriter のオープン/クローズ対称性",
-    "detail": "DataReader の open に対して必ず close が呼ばれるよう設計されているか。DataWriter（ファイル出力等）も同様。リソース漏洩の原因となる非対称実装を検出する。",
-    "source_url": "https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/batch/nablarch_batch/architecture.html",
-    "priority": "MUST",
-    "priority_reason": "close が呼ばれない場合、ファイルハンドル・DB接続がリークし、長時間バッチやリトライ時に障害となる。",
-    "check_method": "DataReader.open() の呼び出しに対応する close() が try-finally または AutoCloseable で保護されているか。例外パスでも close が保証されているか。",
-    "ng_example": "reader.open(context);\nList<Data> records = reader.readAll(); // 例外発生時 close されない\nreader.close(context);",
-    "ok_example": "reader.open(context);\ntry {\n    List<Data> records = reader.readAll();\n} finally {\n    reader.close(context);\n}"
+    "priority": "Should",
+    "priority_reason": "カスタムExecutionListenerが不正実装だとプロジェクト固有の前後処理が実行されず、リソースリーク・データ不整合が発生する。ただし、標準実装のみ使用している場合は本観点の対象外。",
+    "check_method": "カスタムExecutionListenerをimplementsしているクラスがある場合のみ確認。beforeExecute/afterExecuteの実装が業務的に必要な処理を行っているか。afterExecuteで例外が発生しても後続の後処理が実行される設計か（try-finally等）。標準のExecutionListenerで対応できないプロジェクト固有の要件がある場合のみ追加実装されているか。",
+    "ng_example": "// カスタムExecutionListenerのafterExecuteが空実装\npublic void afterExecute(String requestPath, ExecutionContext context) {\n    // 何もしない（追加実装したのに処理なし）\n}",
+    "ok_example": "// プロジェクト固有の前後処理が必要な場合のカスタム実装\npublic void afterExecute(String requestPath, ExecutionContext context) {\n    try {\n        externalMonitoringApi.notifyBatchEnd(requestPath); // 外部監視API通知\n    } finally {\n        LogUtil.log(\"batch finished: \" + requestPath);\n    }\n}",
+    "responsibility": "developer",
+    "review_target": "カスタムExecutionListenerクラス（プロジェクトで追加実装した場合のみ）。通常は標準実装を使用するため対象なし",
+    "framework_provided": "標準的なバッチ前後処理はFWの標準ExecutionListener実装が提供。通常、実装者はimplementsしない。プロジェクト固有の前後処理（外部API通知・カスタムログ等）が必要な場合のみカスタム実装を追加する"
   },
   {
     "perspective_id": "BATCH-003",
@@ -33,7 +24,10 @@
     "priority_reason": "トランザクション境界の誤設定はデータ整合性破壊・ロールバック時の全件再処理・メモリ枯渇を引き起こす。",
     "check_method": "commitInterval が業務要件（データ量・リカバリ要件）に基づいて設定されているか。1コミット間のレコード数が過大（10,000件超）になっていないか。コミット失敗時のリトライ戦略が定義されているか。",
     "ng_example": "<!-- commitInterval 未設定 → デフォルト値依存 -->\n<component name=\"batchAction\" class=\"com.example.SampleBatchAction\"/>",
-    "ok_example": "<component name=\"batchAction\" class=\"com.example.SampleBatchAction\">\n    <property name=\"commitInterval\" value=\"100\"/>\n</component>"
+    "ok_example": "<component name=\"batchAction\" class=\"com.example.SampleBatchAction\">\n    <property name=\"commitInterval\" value=\"100\"/>\n</component>",
+    "responsibility": "developer",
+    "review_target": "component-configuration.xml のcommitInterval設定値",
+    "framework_provided": "トランザクションの開始・コミット・ロールバック自体はトランザクション制御ハンドラが自動実行。実装者はcommitIntervalの値設定のみ担当"
   },
   {
     "perspective_id": "BATCH-004",
@@ -45,7 +39,10 @@
     "priority_reason": "リトライ設計が不適切だと、一時エラーで処理が停止するか、データ欠損を無視して処理が継続するかの二択になり、どちらも業務障害となる。",
     "check_method": "RetryableException と非リトライ例外が明確に区別されているか。リトライ上限回数（maxRetryCount）が設定されているか。スキップ対象の例外クラスが明示されているか。",
     "ng_example": "catch (Exception e) {\n    // 全例外を無視してスキップ\n    log.warn(\"skip record: \" + e.getMessage());\n}",
-    "ok_example": "catch (DeadlockException e) {\n    throw new RetryableException(e); // リトライ対象\n} catch (ValidationException e) {\n    errorWriter.write(record);       // スキップして記録\n}"
+    "ok_example": "catch (DeadlockException e) {\n    throw new RetryableException(e); // リトライ対象\n} catch (ValidationException e) {\n    errorWriter.write(record);       // スキップして記録\n}",
+    "responsibility": "developer",
+    "review_target": "業務BatchActionクラスの例外ハンドリングコード",
+    "framework_provided": "ハンドラキューの例外伝播制御はFWが管理。RetryableExceptionの機構はFWが提供。実装者はどの例外をリトライ/スキップ対象にするかのロジックを実装する"
   },
   {
     "perspective_id": "BATCH-005",
@@ -57,7 +54,10 @@
     "priority_reason": "数百万件のデータを List で一括取得すると OutOfMemoryError が発生し、本番バッチが停止する。",
     "check_method": "DataReader.readAll() や List への一括格納を使っていないか。DB から取得する場合、カーソル/フェッチサイズが適切に設定されているか。ファイル読み込みの場合、BufferedReader 等で逐次処理しているか。",
     "ng_example": "// 全件をメモリにロード\nList<Record> allRecords = dao.findAll(); // OOM リスク\nfor (Record r : allRecords) { process(r); }",
-    "ok_example": "// DataReader でストリーミング読み込み\npublic Record read(ExecutionContext ctx) {\n    return cursor.hasNext() ? cursor.next() : null;\n}"
+    "ok_example": "// DataReader でストリーミング読み込み\npublic Record read(ExecutionContext ctx) {\n    return cursor.hasNext() ? cursor.next() : null;\n}",
+    "responsibility": "developer",
+    "review_target": "カスタムDataReaderクラスのread()メソッド実装",
+    "framework_provided": "DataReadHandlerがDataReader.read()を繰り返し呼び出す制御はFW担当。ストリーミング実現のためのread()メソッド内の実装は実装者が担当"
   },
   {
     "perspective_id": "BATCH-006",
@@ -69,7 +69,10 @@
     "priority_reason": "コンポーネント定義の誤りはアプリケーション起動失敗につながる。開発環境では動作しても本番環境の設定ファイル差異で障害が発生することもある。",
     "check_method": "component タグの class 属性が実在するクラス名か。property タグの name 属性がクラスのフィールド名と一致するか。定義されているが参照されていないコンポーネントがないか。",
     "ng_example": "<component name=\"batchAction\" class=\"com.example.SampleBatchActoin\"/> <!-- タイポ -->\n    <property name=\"commitIntervel\" value=\"100\"/>  <!-- タイポ -->",
-    "ok_example": "<component name=\"batchAction\" class=\"com.example.SampleBatchAction\">\n    <property name=\"commitInterval\" value=\"100\"/>\n</component>"
+    "ok_example": "<component name=\"batchAction\" class=\"com.example.SampleBatchAction\">\n    <property name=\"commitInterval\" value=\"100\"/>\n</component>",
+    "responsibility": "developer",
+    "review_target": "component-configuration.xml等のコンポーネント定義XMLファイル（classパス・propertyタグのname属性）",
+    "framework_provided": "コンポーネントのインスタンス化・DI注入はFWが自動実行。実装者はXML定義の正確性（クラス名・プロパティ名の一致）を担当"
   },
   {
     "perspective_id": "BATCH-007",
@@ -81,7 +84,10 @@
     "priority_reason": "大量データバッチで中断再開設計がないと、障害復旧時の全件再処理でダウンタイムが長期化し、データ品質も損なわれる。",
     "check_method": "処理済みレコードのマーキング（フラグ更新・別テーブル記録）が実装されているか。再開時に未処理レコードのみを読み込む DataReader の WHERE 条件が正しいか。再実行時に二重処理が発生しない冪等性設計になっているか。",
     "ng_example": "-- 全件取得（再実行時に重複処理）\nSELECT * FROM batch_target",
-    "ok_example": "-- 未処理のみ取得\nSELECT * FROM batch_target WHERE status = 'UNPROCESSED'"
+    "ok_example": "-- 未処理のみ取得\nSELECT * FROM batch_target WHERE status = 'UNPROCESSED'",
+    "responsibility": "developer",
+    "review_target": "バッチのSQL定義（未処理レコード取得条件）、処理済みフラグ更新ロジック",
+    "framework_provided": "チェックポイント保存・再開機能はFWが自動提供しない。設計・実装は実装者が行う"
   },
   {
     "perspective_id": "BATCH-008",
@@ -93,7 +99,10 @@
     "priority_reason": "ログ不足は障害時の原因究明を困難にする。過剰なDEBUGログは本番パフォーマンスに影響する。",
     "check_method": "バッチ開始・終了・処理件数が INFO レベルで記録されているか。業務エラーは WARN、システムエラーは ERROR レベルか。LogUtil や Nablarch のロギング API を使用しているか（System.out.println 不使用）。",
     "ng_example": "System.out.println(\"処理完了: \" + count + \"件\"); // 本番ログに出ない",
-    "ok_example": "Logger log = LoggerFactory.getLogger(getClass());\nlog.logInfo(\"バッチ完了\", \"処理件数: \" + count);"
+    "ok_example": "Logger log = LoggerFactory.getLogger(getClass());\nlog.logInfo(\"バッチ完了\", \"処理件数: \" + count);",
+    "responsibility": "developer",
+    "review_target": "業務BatchActionクラスのログ出力コード",
+    "framework_provided": "ログ出力APIはNablarchが提供。FWレベルのアクセスログはFWが出力。業務的な処理件数ログ・統計情報の出力は実装者が担当"
   },
   {
     "perspective_id": "BATCH-009",
@@ -105,7 +114,10 @@
     "priority_reason": "入力バリデーションが欠如すると、不正データがDBに登録され後続処理の障害となる。",
     "check_method": "ValidationUtil.validate() または Bean Validation アノテーションが使用されているか。バリデーションエラー発生時の処理フロー（スキップ/停止）が業務仕様と一致するか。エラーレコードはエラーファイルまたはログに記録されているか。",
     "ng_example": "// バリデーションなしで直接DB登録\ndao.insert(record); // 不正データが混入する",
-    "ok_example": "ValidationUtil.validate(record);\ndao.insert(record);"
+    "ok_example": "ValidationUtil.validate(record);\ndao.insert(record);",
+    "responsibility": "developer",
+    "review_target": "業務BatchActionクラスのバリデーション呼び出しコード、入力FormクラスのValidationアノテーション",
+    "framework_provided": "ValidationUtil等のバリデーション実行エンジンはFWが提供。実装者はバリデーション定義（アノテーション）とvalidate()呼び出しを担当"
   },
   {
     "perspective_id": "BATCH-010",
@@ -117,7 +129,10 @@
     "priority_reason": "二重起動によるデータ二重処理は金融・会計系バッチでは重大なデータ不整合を引き起こす。",
     "check_method": "DB ロック・ファイルロック・nablarch-common-exclusivecontrol による排他が実装されているか。ロック取得失敗時のエラーメッセージ・終了コードが適切か。バッチ終了時（正常・異常）にロックが確実に解放されるか。",
     "ng_example": "// 排他制御なしで直接処理開始\nprocessBatch();",
-    "ok_example": "ExclusiveControlManager.lock(\"BATCH_JOB_A\");\ntry {\n    processBatch();\n} finally {\n    ExclusiveControlManager.unlock(\"BATCH_JOB_A\");\n}"
+    "ok_example": "ExclusiveControlManager.lock(\"BATCH_JOB_A\");\ntry {\n    processBatch();\n} finally {\n    ExclusiveControlManager.unlock(\"BATCH_JOB_A\");\n}",
+    "responsibility": "developer",
+    "review_target": "業務BatchActionクラスの排他制御実装（ExclusiveControlManager呼び出し）",
+    "framework_provided": "排他制御機能の提供（nablarch-common-exclusivecontrol）はFW。実装者はどのリソースをいつロックするかの設計・実装を担当"
   },
   {
     "perspective_id": "BATCH-011",
@@ -129,7 +144,10 @@
     "priority_reason": "エンコーディング未指定は実行環境依存の文字化けを引き起こし、本番障害・データ破損の原因となる。",
     "check_method": "フォーマット定義ファイル（format.fmt）に file-type と text-encoding が指定されているか。DataBindConfig 等で明示的にエンコーディングが設定されているか。",
     "ng_example": "// エンコーディング未指定\nnew FileReader(\"input.csv\") // JVM デフォルト依存",
-    "ok_example": "# format.fmt\nfile-type: CSV\ntext-encoding: UTF-8"
+    "ok_example": "# format.fmt\nfile-type: CSV\ntext-encoding: UTF-8",
+    "responsibility": "developer",
+    "review_target": "フォーマット定義ファイル（.fmt）のtext-encoding設定",
+    "framework_provided": "フォーマット定義に基づくファイルI/Oの実際の読み書きはFWが実行。実装者はエンコーディング設定の正確性を担当"
   },
   {
     "perspective_id": "BATCH-012",
@@ -141,7 +159,10 @@
     "priority_reason": "終了コードが常に 0（正常）だと、異常終了を監視システムが検知できず、障害が隠蔽される。",
     "check_method": "正常終了: 0、業務エラー: 1〜9、システムエラー: 10〜 の区分が設計されているか。System.exit() の代わりに BatchCommandLine の終了コード機構を使っているか。ジョブスケジューラとの終了コード連携が文書化されているか。",
     "ng_example": "catch (Exception e) {\n    log.error(\"エラー\", e);\n    System.exit(0); // エラーなのに正常終了コード\n}",
-    "ok_example": "catch (SystemException e) {\n    log.error(\"システムエラー\", e);\n    System.exit(10);\n}"
+    "ok_example": "catch (SystemException e) {\n    log.error(\"システムエラー\", e);\n    System.exit(10);\n}",
+    "responsibility": "developer",
+    "review_target": "バッチ終了処理のSystem.exit()呼び出し、またはBatchCommandLine終了コード設定",
+    "framework_provided": "終了コードの伝播機構はFWが提供。実装者は業務判断に基づく終了コード値の設定を担当"
   },
   {
     "perspective_id": "BATCH-013",
@@ -153,7 +174,10 @@
     "priority_reason": "統計情報がないと、バッチが実行されたか・何件処理されたかを後から確認できず、業務確認・監査対応が困難になる。",
     "check_method": "ExecutionContext から処理件数を取得して最終ログ出力しているか。エラーレコード数が明示的にカウントされているか。統計情報を専用テーブル・ファイルに永続化しているか。",
     "ng_example": "// 件数カウントなし\nfor (Record r : records) {\n    process(r);\n}\nlog.info(\"バッチ完了\"); // 件数不明",
-    "ok_example": "int processed = 0, skipped = 0;\nfor (Record r : records) {\n    try { process(r); processed++; }\n    catch (SkipException e) { skipped++; }\n}\nlog.info(\"完了: 処理=\" + processed + \" スキップ=\" + skipped);"
+    "ok_example": "int processed = 0, skipped = 0;\nfor (Record r : records) {\n    try { process(r); processed++; }\n    catch (SkipException e) { skipped++; }\n}\nlog.info(\"完了: 処理=\" + processed + \" スキップ=\" + skipped);",
+    "responsibility": "developer",
+    "review_target": "業務BatchActionクラスの件数カウント・統計ログ出力コード",
+    "framework_provided": "FWはフレームワークレベルの実行統計を提供するが、業務的な処理件数カウントと統計レポートの出力は実装者が担当"
   },
   {
     "perspective_id": "BATCH-014",
@@ -165,7 +189,10 @@
     "priority_reason": "テストのないバッチは変更時のデグレ検知ができず、本番障害リスクが高まる。",
     "check_method": "BatchRequestTestSupport を継承したテストクラスが存在するか。テストデータが Excel または YAML で外部定義されているか。正常系・異常系の両テストケースが存在するか。",
     "ng_example": "// バッチアクションのテストなし（テストクラス自体が存在しない）",
-    "ok_example": "public class SampleBatchActionTest extends BatchRequestTestSupport {\n    @Test\n    public void 正常終了() { execute(\"testCases/normal.xlsx\"); }\n}"
+    "ok_example": "public class SampleBatchActionTest extends BatchRequestTestSupport {\n    @Test\n    public void 正常終了() { execute(\"testCases/normal.xlsx\"); }\n}",
+    "responsibility": "developer",
+    "review_target": "テストクラス（BatchRequestTestSupportを継承したクラス）",
+    "framework_provided": "テストサポートクラス（BatchRequestTestSupport・NablarchTestSupport等）はFWが提供。テストケースの実装と正常系・異常系のカバレッジは実装者が担当"
   },
   {
     "perspective_id": "BATCH-015",
@@ -177,7 +204,10 @@
     "priority_reason": "リクエストパスの不一致はバッチ起動失敗の最も基本的な原因であり、リリース直前に発覚すると影響が大きい。",
     "check_method": "起動スクリプト・Jenkins ジョブ等のリクエストパスと XML のコンポーネント名が完全一致するか。ステージング環境でのバッチ起動テストが実施済みか。",
     "ng_example": "# コンポーネント名が \"sampleBatchAction\" なのに\njava ... -requestPath=sample_batch_action  # アンダースコア形式で不一致",
-    "ok_example": "java ... -requestPath=sampleBatchAction  # コンポーネント名と一致"
+    "ok_example": "java ... -requestPath=sampleBatchAction  # コンポーネント名と一致",
+    "responsibility": "developer",
+    "review_target": "起動スクリプト・Jenkins設定の-requestPathパラメータ、component-configuration.xmlのコンポーネントname属性",
+    "framework_provided": "リクエストパスに基づくアクション解決（DispatchHandler）はFWが実行。実装者はコンポーネント名と起動パスの完全一致を確認する"
   },
   {
     "perspective_id": "BATCH-016",
@@ -189,7 +219,10 @@
     "priority_reason": "フォーマット定義の誤りはパース失敗・データ欠損・文字化けに直結し、バッチ全件失敗の原因となる。",
     "check_method": "フォーマット定義の項目数・順序がファイル仕様書と一致するか。固定長ファイルの場合、各項目のバイト数の合計がレコード長と一致するか。必須項目に required 制約が設定されているか。",
     "ng_example": "# 仕様: 氏名30バイト / 定義: 氏名20バイト → 切り捨て発生\n[氏名]\ndataType: X\nlength: 20",
-    "ok_example": "[氏名]\ndataType: X\nlength: 30\nrequired: true"
+    "ok_example": "[氏名]\ndataType: X\nlength: 30\nrequired: true",
+    "responsibility": "developer",
+    "review_target": "フォーマット定義ファイル（.fmt）の項目定義（型・桁数・必須設定）",
+    "framework_provided": "フォーマット定義に基づくデータパース処理はFWが実行。実装者はフォーマット定義の正確性（仕様書との一致）を担当"
   },
   {
     "perspective_id": "BATCH-017",
@@ -201,7 +234,25 @@
     "priority_reason": "SLA 未達のバッチは翌業務日の開始に影響し、業務停止を引き起こす。設計段階での性能見積もりが重要。",
     "check_method": "処理件数 × 1件あたり処理時間の概算が処理ウィンドウ内に収まるか。DB の SELECT/INSERT に適切なインデックスが設定されているか。外部 API 呼び出しがある場合、タイムアウト・サーキットブレーカーが設定されているか。",
     "ng_example": "// 1件ごとに SELECT + INSERT（N+1 問題）\nfor (Record r : records) {\n    dao.findByKey(r.getId()); // N回 SELECT\n    dao.insert(r);            // N回 INSERT\n}",
-    "ok_example": "// バルク INSERT で性能改善\ndao.batchInsert(records); // 一括 INSERT"
+    "ok_example": "// バルク INSERT で性能改善\ndao.batchInsert(records); // 一括 INSERT",
+    "responsibility": "developer",
+    "review_target": "業務BatchActionクラス・SQLファイル・パフォーマンステスト結果",
+    "framework_provided": "バッチ実行制御自体はFWが担当。性能設計・SQLチューニング・処理ウィンドウ見積もりは実装者が担当"
+  },
+  {
+    "perspective_id": "BATCH-018",
+    "category": "batch",
+    "title": "カスタムDataReader実装時のclose()業務後処理確認",
+    "detail": "FWはDataReader.open()とclose()の呼び出しを自動管理（DataReadHandler）するため、実装者がopen/closeを呼ぶコードを書く必要はない。ただし、カスタムDataReaderを実装した場合、closeメソッド内に業務的後処理（外部リソース解放・キャッシュクリア・一時ファイル削除等）が正しく実装されているか確認する。",
+    "source_url": "https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/batch/nablarch_batch/architecture.html",
+    "priority": "Should",
+    "priority_reason": "カスタムDataReader内でFW管理外のリソース（外部API接続・独自キャッシュ等）を使用している場合、close()に後処理が抜けるとリソースリークが発生する。",
+    "check_method": "カスタムDataReaderを実装している場合のみ確認（FW標準DataReaderのみ使用の場合は対象外）。close()メソッドに業務的後処理（外部リソースの解放・一時ファイル削除等）が実装されているか。FW管理外のリソースを開いた場合はclose()内で確実にリリースしているか。",
+    "ng_example": "// カスタムDataReaderでcloseの後処理を忘れた例\npublic void close(ExecutionContext context) {\n    // 何もしない（外部APIの接続が残ったまま）\n}",
+    "ok_example": "// カスタムDataReaderで適切な後処理を実装した例\npublic void close(ExecutionContext context) {\n    if (externalApiClient != null) {\n        externalApiClient.disconnect(); // FW管理外のリソースを解放\n    }\n    if (tempFile != null && tempFile.exists()) {\n        tempFile.delete(); // 一時ファイルのクリーンアップ\n    }\n}",
+    "responsibility": "developer",
+    "review_target": "カスタムDataReaderクラスのclose()メソッド実装（プロジェクトでカスタムDataReaderを実装している場合のみ）",
+    "framework_provided": "DataReader.open()とclose()の呼び出し自体はFW（DataReadHandler）が自動管理。実装者がopen()/close()を呼ぶコードを外から書く必要はない。カスタムDataReaderを実装した場合、close()メソッドの中身（業務後処理）の実装は実装者が担当"
   },
   {
     "perspective_id": "WEB-001",
@@ -213,7 +264,10 @@
     "priority_reason": "ハンドラキューはリクエスト処理の根幹であり、順序誤りは認証・認可の無効化やCSRF対策の欠落につながる。",
     "check_method": "HttpCharacterEncodingHandler が最前列に配置されているか。HttpResponseHandler が後段に配置されているか。認証ハンドラが業務ハンドラより前に配置されているか。SessionConcurrentAccessHandler（セッション排他）が必要な場合に設定されているか。",
     "ng_example": "<!-- 認証ハンドラが業務アクションより後 → 認証バイパス可能 -->\n<list name=\"handlerQueue\">\n    <component-ref name=\"businessActionDispatcher\"/>\n    <component-ref name=\"authenticationHandler\"/> <!-- 順序誤り -->\n</list>",
-    "ok_example": "<list name=\"handlerQueue\">\n    <component-ref name=\"httpCharacterEncodingHandler\"/>\n    <component-ref name=\"authenticationHandler\"/>\n    <component-ref name=\"csrfTokenHandler\"/>\n    <component-ref name=\"businessActionDispatcher\"/>\n</list>"
+    "ok_example": "<list name=\"handlerQueue\">\n    <component-ref name=\"httpCharacterEncodingHandler\"/>\n    <component-ref name=\"authenticationHandler\"/>\n    <component-ref name=\"csrfTokenHandler\"/>\n    <component-ref name=\"businessActionDispatcher\"/>\n</list>",
+    "responsibility": "developer",
+    "review_target": "web-component-configuration.xml等のhandlerQueue設定",
+    "framework_provided": "各ハンドラの実際の処理ロジックはFWが提供。実装者はハンドラの種類と順序の設定を担当"
   },
   {
     "perspective_id": "WEB-002",
@@ -225,7 +279,10 @@
     "priority_reason": "セッション管理の不備はセッションハイジャック・固定攻撃・メモリ圧迫の原因となる。",
     "check_method": "SessionUtil.put() で格納するオブジェクトが最小限か（大容量オブジェクト不可）。ログイン成功後に SessionUtil.invalidate() → 新セッション発行しているか（セッション固定対策）。セッションタイムアウト値が web.xml または設定ファイルで明示されているか。DB セッションストア使用時、セッションデータのスキーマが正しく定義されているか。",
     "ng_example": "// ログイン成功後にセッション固定攻撃が可能\nSessionUtil.put(context, \"loginUser\", user); // セッション無効化なし",
-    "ok_example": "SessionUtil.invalidate(context); // 旧セッション破棄\nSessionUtil.put(context, \"loginUser\", user); // 新セッションに格納"
+    "ok_example": "SessionUtil.invalidate(context); // 旧セッション破棄\nSessionUtil.put(context, \"loginUser\", user); // 新セッションに格納",
+    "responsibility": "developer",
+    "review_target": "アクションクラスのSessionUtil.put()/get()/invalidate()呼び出しコード",
+    "framework_provided": "セッションストアへの実際の読み書き（往路・復路）はFW（セッション変数保存ハンドラ）が自動実行。実装者はSessionUtil APIを正しく使うことを担当"
   },
   {
     "perspective_id": "WEB-003",
@@ -237,7 +294,10 @@
     "priority_reason": "CSRF 対策の欠落は、悪意あるサイトからの不正リクエストによるデータ改ざんを許す。金融・行政系システムでは致命的な脆弱性となる。",
     "check_method": "CsrfTokenHandler がハンドラキューに登録されているか。JSP の更新フォームに <n:csrf> タグまたは相当のトークン hidden フィールドが含まれているか。AJAX リクエストで CSRF トークンがヘッダまたはボディに付与されているか。GET リクエスト専用の除外設定が適切か（CSRFは GET では不要）。",
     "ng_example": "<!-- CSRF トークン未設定 -->\n<form action=\"/update\" method=\"POST\">\n    <input type=\"submit\" value=\"更新\"/>\n</form>",
-    "ok_example": "<form action=\"/update\" method=\"POST\">\n    <n:csrf/>  <%-- CSRF トークン自動付与 --%>\n    <input type=\"submit\" value=\"更新\"/>\n</form>"
+    "ok_example": "<form action=\"/update\" method=\"POST\">\n    <n:csrf/>  <%-- CSRF トークン自動付与 --%>\n    <input type=\"submit\" value=\"更新\"/>\n</form>",
+    "responsibility": "developer",
+    "review_target": "web-component-configuration.xmlのCsrfTokenHandler設定、JSPの<n:csrf>タグ配置",
+    "framework_provided": "CSRFトークンの生成・検証ロジック自体はFW（CsrfTokenHandler）が実行。実装者はハンドラ設定とJSPへの<n:csrf>タグ配置を担当"
   },
   {
     "perspective_id": "WEB-004",
@@ -249,7 +309,10 @@
     "priority_reason": "クライアントサイドのみのバリデーションは Burp Suite 等のツールで容易にバイパス可能。不正入力のDB登録を防ぐためサーバーサイド検証は必須。",
     "check_method": "アクションクラスで ValidationUtil.validate() が呼ばれているか。バリデーションアノテーション（@Required, @Length, @Domain 等）が Form クラスに定義されているか。バリデーションエラー時に入力画面に戻り、エラーメッセージが表示されるか。",
     "ng_example": "// バリデーションなしで直接 DB 操作\npublic HttpResponse doPost(HttpRequest req, ExecutionContext ctx) {\n    UserForm form = SessionUtil.get(ctx, \"form\");\n    dao.insert(form); // バリデーションなし\n}",
-    "ok_example": "public HttpResponse doPost(HttpRequest req, ExecutionContext ctx) {\n    UserForm form = SessionUtil.get(ctx, \"form\");\n    ValidationUtil.validate(form);\n    dao.insert(form);\n}"
+    "ok_example": "public HttpResponse doPost(HttpRequest req, ExecutionContext ctx) {\n    UserForm form = SessionUtil.get(ctx, \"form\");\n    ValidationUtil.validate(form);\n    dao.insert(form);\n}",
+    "responsibility": "developer",
+    "review_target": "アクションクラスのValidationUtil.validate()呼び出し、FormクラスのValidationアノテーション定義",
+    "framework_provided": "バリデーション実行エンジン（アノテーション評価）はFWが提供。実装者はバリデーションアノテーション定義とvalidate()呼び出しを担当"
   },
   {
     "perspective_id": "WEB-005",
@@ -261,7 +324,10 @@
     "priority_reason": "エラー画面未定義は内部エラー情報のユーザー露出（スタックトレース表示）につながり、セキュリティリスクとなる。",
     "check_method": "web-component-configuration.xml に ErrorHandler でエラーページが設定されているか。HTTP 404/500 の各エラーページが web.xml に定義されているか。スタックトレースが画面に表示されないか（本番設定確認）。",
     "ng_example": "<!-- エラーページ未設定 → デフォルトのスタックトレースが表示される -->",
-    "ok_example": "<error-page>\n    <error-code>404</error-code>\n    <location>/WEB-INF/view/error/pageNotFound.jsp</location>\n</error-page>\n<error-page>\n    <error-code>500</error-code>\n    <location>/WEB-INF/view/error/systemError.jsp</location>\n</error-page>"
+    "ok_example": "<error-page>\n    <error-code>404</error-code>\n    <location>/WEB-INF/view/error/pageNotFound.jsp</location>\n</error-page>\n<error-page>\n    <error-code>500</error-code>\n    <location>/WEB-INF/view/error/systemError.jsp</location>\n</error-page>",
+    "responsibility": "developer",
+    "review_target": "web.xmlのerror-page設定、web-component-configuration.xmlのErrorHandler設定",
+    "framework_provided": "例外捕捉とエラーページ遷移の基盤機構はFWが提供。実装者はエラーページのURL設定と全エラーコードのカバレッジを担当"
   },
   {
     "perspective_id": "WEB-006",
@@ -273,7 +339,10 @@
     "priority_reason": "アクションに業務ロジックが集中すると、テスト困難・変更影響範囲の拡大・コードの可読性低下が発生する。",
     "check_method": "アクションクラスが HttpRequest / ExecutionContext / HttpResponse の処理のみを行っているか。SQL や業務計算ロジックがアクションクラスに直接書かれていないか。業務ロジッククラスが SystemRepository.get() で取得されているか。",
     "ng_example": "public HttpResponse doPost(HttpRequest req, ExecutionContext ctx) {\n    // アクション内に直接 SQL\n    SqlResultSet result = DbConnectionContext.getConnection()\n        .query(\"SELECT * FROM ...\");\n    // 業務計算もアクション内\n    int total = calcTotal(result);\n}",
-    "ok_example": "public HttpResponse doPost(HttpRequest req, ExecutionContext ctx) {\n    OrderService service = SystemRepository.get(\"orderService\");\n    OrderResult result = service.processOrder(form);\n    SessionUtil.put(ctx, \"result\", result);\n    return new HttpResponse(\"/WEB-INF/view/complete.jsp\");\n}"
+    "ok_example": "public HttpResponse doPost(HttpRequest req, ExecutionContext ctx) {\n    OrderService service = SystemRepository.get(\"orderService\");\n    OrderResult result = service.processOrder(form);\n    SessionUtil.put(ctx, \"result\", result);\n    return new HttpResponse(\"/WEB-INF/view/complete.jsp\");\n}",
+    "responsibility": "developer",
+    "review_target": "アクションクラス（業務ロジック混入確認）、サービスクラス・ドメインクラスの分離状況",
+    "framework_provided": "HTTPリクエスト/レスポンスの変換はFWが担当。業務ロジックの責務配置設計は実装者が担当"
   },
   {
     "perspective_id": "WEB-007",
@@ -285,7 +354,10 @@
     "priority_reason": "XSS は OWASP Top 10 の常連脆弱性。ユーザー入力の未エスケープ出力はスクリプトインジェクションによるアカウント乗っ取りにつながる。",
     "check_method": "JSP での動的値出力に <n:write> または <c:out> を使用しているか。EL 式 ${...} を直接 HTML 属性・本文に使用していないか（EL 式はエスケープされない場合がある）。<script> タグ内での動的値出力には JavaScript エスケープが適用されているか。",
     "ng_example": "<!-- 未エスケープ → XSS 脆弱性 -->\n<%= request.getParameter(\"name\") %>\n<!-- または -->\n${user.comment}",
-    "ok_example": "<n:write name=\"user.comment\"/>\n<%-- または --%>\n<c:out value=\"${user.comment}\"/>"
+    "ok_example": "<n:write name=\"user.comment\"/>\n<%-- または --%>\n<c:out value=\"${user.comment}\"/>",
+    "responsibility": "developer",
+    "review_target": "JSPファイルの動的値出力箇所（<n:write>タグ使用状況、EL式の直接使用確認）",
+    "framework_provided": "<n:write>タグ内部のHTMLエスケープ処理はFWが実行。実装者は適切なタグ（<n:write>または<c:out>）を選択することを担当"
   },
   {
     "perspective_id": "WEB-008",
@@ -297,7 +369,10 @@
     "priority_reason": "SQL インジェクションは全データ漏洩・削除・認証バイパスを引き起こす最も危険な脆弱性の一つ。",
     "check_method": "SQL ファイル内でユーザー入力を直接文字列連結していないか。UniversalDao.findAllBySqlFile() のパラメータがバインド変数経由か。動的条件が $if 等の Nablarch テンプレート機能で組み立てられているか。",
     "ng_example": "// SQL インジェクション脆弱性\nString sql = \"SELECT * FROM users WHERE name = '\" + name + \"'\";",
-    "ok_example": "// バインドパラメータで安全\nUserCondition cond = new UserCondition();\ncond.setName(name);\nList<User> users = UniversalDao.findAllBySqlFile(User.class, \"FIND_BY_NAME\", cond);"
+    "ok_example": "// バインドパラメータで安全\nUserCondition cond = new UserCondition();\ncond.setName(name);\nList<User> users = UniversalDao.findAllBySqlFile(User.class, \"FIND_BY_NAME\", cond);",
+    "responsibility": "developer",
+    "review_target": "SQLファイル（.sql）のバインドパラメータ定義、UniversalDao呼び出し箇所",
+    "framework_provided": "バインドパラメータによる安全なSQL実行はFWが提供。実装者はSQL文字列連結を使わないことを担当"
   },
   {
     "perspective_id": "WEB-009",
@@ -309,7 +384,10 @@
     "priority_reason": "認証・認可の欠落は不正アクセスによる情報漏洩・操作の直接的な原因となる。",
     "check_method": "AuthenticationHandler がハンドラキューに登録され、未認証時に login 画面へリダイレクトされるか。権限が必要な画面・API では PermissionUtil.permit() または相当の権限チェックが実装されているか。テスト：ログアウト後に保護 URL へ直接アクセスした場合の動作確認。",
     "ng_example": "// 権限チェックなしで管理画面にアクセス可能\npublic HttpResponse doGet(HttpRequest req, ExecutionContext ctx) {\n    return new HttpResponse(\"/WEB-INF/view/admin.jsp\"); // 誰でもアクセス可\n}",
-    "ok_example": "public HttpResponse doGet(HttpRequest req, ExecutionContext ctx) {\n    PermissionUtil.permit(ctx, \"ADMIN_SCREEN\");\n    return new HttpResponse(\"/WEB-INF/view/admin.jsp\");\n}"
+    "ok_example": "public HttpResponse doGet(HttpRequest req, ExecutionContext ctx) {\n    PermissionUtil.permit(ctx, \"ADMIN_SCREEN\");\n    return new HttpResponse(\"/WEB-INF/view/admin.jsp\");\n}",
+    "responsibility": "developer",
+    "review_target": "web-component-configuration.xmlのAuthenticationHandler設定、アクションクラスのPermissionUtil呼び出し",
+    "framework_provided": "認証チェックのハンドラ機構はFWが提供。実装者はハンドラ設定と権限チェック（PermissionUtil.permit()等）の呼び出しを担当"
   },
   {
     "perspective_id": "WEB-010",
@@ -321,7 +399,10 @@
     "priority_reason": "二重サブミットはデータの二重登録・注文の重複等の業務障害につながる。特に EC・申請系システムでは重要。",
     "check_method": "DoubleSubmissionHandler がハンドラキューに登録されているか。フォームに二重サブミット防止トークンが含まれているか（<n:token> タグ等）。JavaScript による送信ボタン二重クリック防止も実装されているか。",
     "ng_example": "<!-- 二重サブミット対策なし -->\n<form action=\"/order/register\" method=\"POST\">\n    <input type=\"submit\" value=\"注文確定\"/>\n</form>",
-    "ok_example": "<form action=\"/order/register\" method=\"POST\">\n    <n:token/>  <%-- 二重サブミット防止トークン --%>\n    <input type=\"submit\" value=\"注文確定\"/>\n</form>"
+    "ok_example": "<form action=\"/order/register\" method=\"POST\">\n    <n:token/>  <%-- 二重サブミット防止トークン --%>\n    <input type=\"submit\" value=\"注文確定\"/>\n</form>",
+    "responsibility": "developer",
+    "review_target": "web-component-configuration.xmlのDoubleSubmissionHandler設定、JSPの<n:token>タグ配置",
+    "framework_provided": "二重サブミットトークンの生成・検証はFW（DoubleSubmissionHandler）が実行。実装者はハンドラ設定とJSPへの<n:token>タグ配置を担当"
   },
   {
     "perspective_id": "WEB-011",
@@ -333,7 +414,10 @@
     "priority_reason": "制限なしのファイルアップロードはサーバーストレージの枯渇・悪意あるスクリプト実行・DoS 攻撃のベクタとなる。",
     "check_method": "MultipartHandler のサイズ上限設定（maxFileSize, maxRequestSize）が適切か。アップロードファイルの拡張子・MIMEタイプのホワイトリスト検証が実装されているか。アップロードファイルの保存先がドキュメントルート外か（Web からの直接アクセス不可）。",
     "ng_example": "// 拡張子チェックなし\nMultipartFile file = req.getFile(\"uploadFile\");\nfile.moveTo(\"/var/www/html/uploads/\" + file.getOriginalFilename());",
-    "ok_example": "MultipartFile file = req.getFile(\"uploadFile\");\nString ext = FilenameUtils.getExtension(file.getOriginalFilename());\nif (!ALLOWED_EXTENSIONS.contains(ext)) throw new ValidationException(\"不正なファイル形式\");\nfile.moveTo(\"/var/data/uploads/\" + UUID.randomUUID() + \".\" + ext);"
+    "ok_example": "MultipartFile file = req.getFile(\"uploadFile\");\nString ext = FilenameUtils.getExtension(file.getOriginalFilename());\nif (!ALLOWED_EXTENSIONS.contains(ext)) throw new ValidationException(\"不正なファイル形式\");\nfile.moveTo(\"/var/data/uploads/\" + UUID.randomUUID() + \".\" + ext);",
+    "responsibility": "developer",
+    "review_target": "MultipartHandlerのサイズ上限設定、アクションクラスの拡張子・MIMEタイプ検証コード",
+    "framework_provided": "マルチパートのパース処理はFW（MultipartHandler）が担当。実装者はサイズ上限設定と拡張子検証ロジックの実装を担当"
   },
   {
     "perspective_id": "WEB-012",
@@ -345,7 +429,10 @@
     "priority_reason": "メッセージのハードコードは多言語対応を困難にし、文言変更時の修正漏れを招く。",
     "check_method": "エラーメッセージが message.properties または同等ファイルで管理されているか。JSP で <n:message> タグまたは MessageUtil.createMessage() が使われているか。日本語文言が JSP に直書きされていないか。",
     "ng_example": "<!-- メッセージハードコード -->\n<span class=\"error\">入力値が不正です。必須項目を確認してください。</span>",
-    "ok_example": "<n:message messageId=\"errors.required\" arg0=\"氏名\"/>"
+    "ok_example": "<n:message messageId=\"errors.required\" arg0=\"氏名\"/>",
+    "responsibility": "developer",
+    "review_target": "message.properties等のメッセージ定義ファイル、JSPの<n:message>タグ使用状況",
+    "framework_provided": "メッセージIDから文言への解決はFW（MessageUtil）が実行。実装者はメッセージ定義ファイルの作成と<n:message>タグの使用を担当"
   },
   {
     "perspective_id": "WEB-013",
@@ -357,7 +444,10 @@
     "priority_reason": "全件取得はメモリ枯渇・レスポンス時間劣化・画面表示不能の原因となる。数万件のデータ返却でブラウザがフリーズすることも。",
     "check_method": "UniversalDao.findAllBySqlFile() にページング条件（pageNumber, max）が設定されているか。件数上限（例: 1000件）が設定されているか。検索条件なし検索が実行できない制約があるか。",
     "ng_example": "// 全件取得（件数制限なし）\nList<User> users = UniversalDao.findAll(User.class);",
-    "ok_example": "Pagination pagination = new Pagination(pageNo, 20); // 20件/ページ\nList<User> users = UniversalDao.findAllBySqlFile(\n    User.class, \"FIND_USERS\", condition, pagination);"
+    "ok_example": "Pagination pagination = new Pagination(pageNo, 20); // 20件/ページ\nList<User> users = UniversalDao.findAllBySqlFile(\n    User.class, \"FIND_USERS\", condition, pagination);",
+    "responsibility": "developer",
+    "review_target": "UniversalDao呼び出しのページング条件設定コード（pageNumber・max等）",
+    "framework_provided": "ページングクエリの生成・実行はFWが提供。実装者はページング条件（件数・ページ番号）の受け取りと設定を担当"
   },
   {
     "perspective_id": "WEB-014",
@@ -369,7 +459,10 @@
     "priority_reason": "テストのないウェブアクションはリグレッションに気づかず、セキュリティ修正の影響範囲把握も困難になる。",
     "check_method": "HttpRequestTestSupport を継承したテストクラスが存在するか。テストデータが Excel または YAML で管理されているか。正常遷移・バリデーションエラー・認証エラーのテストケースが存在するか。",
     "ng_example": "// アクションクラスのテストなし",
-    "ok_example": "public class UserActionTest extends HttpRequestTestSupport {\n    @Test\n    public void 正常登録() {\n        HttpResponse response = execute(\"POST\", \"/user/register\", \"testCases/register.xlsx\");\n        assertThat(response.getStatusCode(), is(302));\n    }\n}"
+    "ok_example": "public class UserActionTest extends HttpRequestTestSupport {\n    @Test\n    public void 正常登録() {\n        HttpResponse response = execute(\"POST\", \"/user/register\", \"testCases/register.xlsx\");\n        assertThat(response.getStatusCode(), is(302));\n    }\n}",
+    "responsibility": "developer",
+    "review_target": "テストクラス（HttpRequestTestSupportを継承したクラス）",
+    "framework_provided": "テストサポートクラス（HttpRequestTestSupport等）はFWが提供。テストケースの実装と正常系・認証エラー系のカバレッジは実装者が担当"
   },
   {
     "perspective_id": "WEB-015",
@@ -381,7 +474,10 @@
     "priority_reason": "セキュリティヘッダの欠如はクリックジャッキング・MIME スニッフィング等のブラウザレベルの攻撃に対して無防備になる。",
     "check_method": "X-Frame-Options: DENY または SAMEORIGIN が設定されているか。X-Content-Type-Options: nosniff が設定されているか。Content-Security-Policy が設定されているか（推奨）。これらを Nablarch ハンドラまたは web.xml の filter で一括設定しているか。",
     "ng_example": "// セキュリティヘッダなし → クリックジャッキング可能\nreturn new HttpResponse(\"/WEB-INF/view/top.jsp\");",
-    "ok_example": "// ResponseHeader ハンドラまたはフィルタで一括設定\nresponse.setHeader(\"X-Frame-Options\", \"DENY\");\nresponse.setHeader(\"X-Content-Type-Options\", \"nosniff\");"
+    "ok_example": "// ResponseHeader ハンドラまたはフィルタで一括設定\nresponse.setHeader(\"X-Frame-Options\", \"DENY\");\nresponse.setHeader(\"X-Content-Type-Options\", \"nosniff\");",
+    "responsibility": "developer",
+    "review_target": "web.xmlのフィルタ設定、またはアクションクラスのresponse.setHeader()呼び出し",
+    "framework_provided": "セキュリティヘッダを自動設定するFW機能は標準では提供されない。実装者がフィルタまたはアクション内でX-Frame-Options等を設定する必要がある"
   },
   {
     "perspective_id": "WEB-016",
@@ -393,19 +489,25 @@
     "priority_reason": "セッションの不完全な破棄は、ログアウト後に他ユーザーが同じブラウザで保護リソースにアクセスできてしまうリスクがある。",
     "check_method": "ログアウトアクションで SessionUtil.invalidate() が呼ばれているか。ログアウト後に Cache-Control ヘッダでブラウザキャッシュを無効化しているか。ログアウト後の URL 直接アクセスがログイン画面にリダイレクトされるか。",
     "ng_example": "public HttpResponse doLogout(HttpRequest req, ExecutionContext ctx) {\n    SessionUtil.delete(ctx, \"loginUser\"); // ユーザー情報だけ削除（不完全）\n    return new HttpResponse(302, \"redirect:///login\");\n}",
-    "ok_example": "public HttpResponse doLogout(HttpRequest req, ExecutionContext ctx) {\n    SessionUtil.invalidate(ctx); // セッション全体を破棄\n    return new HttpResponse(302, \"redirect:///login\");\n}"
+    "ok_example": "public HttpResponse doLogout(HttpRequest req, ExecutionContext ctx) {\n    SessionUtil.invalidate(ctx); // セッション全体を破棄\n    return new HttpResponse(302, \"redirect:///login\");\n}",
+    "responsibility": "developer",
+    "review_target": "ログアウトアクションクラスのSessionUtil.invalidate()呼び出し、Cache-Controlヘッダ設定",
+    "framework_provided": "セッションストアのクリア機構はFWが提供。実装者はSessionUtil.invalidate()の呼び出しタイミングとブラウザキャッシュ制御を担当"
   },
   {
     "perspective_id": "REST-001",
     "category": "rest",
-    "title": "JAX-RS アノテーションとリソースクラスの実装パターン確認",
-    "detail": "Nablarch の JAX-RS 対応（nablarch-fw-jaxrs）を使ったリソースクラスが、JAX-RS の規約に沿って正しく実装されているか確認する。@Path / @GET / @POST 等のアノテーションが適切に設定されているか確認する。",
+    "title": "RoutesMapping設定とアクションクラスの実装確認",
+    "detail": "NablarchのJakarta RESTful Web Servicesサポートでは、URLルーティングはRoutesMapping（routes.rb等のXML設定）で行う。実装者が使用できるアノテーションは@Produces/@Consumes/@Validの3種のみであり、@Pathアノテーションはルーティングには使用しない。アクションクラスにはHttpResponseを返す業務ロジックメソッドを実装し、RoutesMapping設定でURLとメソッドを紐付ける。",
     "source_url": "https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web_service/rest/architecture.html",
     "priority": "MUST",
-    "priority_reason": "JAX-RS アノテーションの誤りはルーティング失敗・405 Method Not Allowed 等を引き起こし、API が全く機能しなくなる。",
-    "check_method": "リソースクラスに @Path アノテーションがあるか。各メソッドに HTTP メソッドアノテーション（@GET, @POST, @PUT, @DELETE）が付与されているか。コンポーネント定義（XML）でリソースクラスが登録されているか。@Produces / @Consumes で application/json が指定されているか。",
-    "ng_example": "// @Path なし → ルーティング失敗\npublic class UserResource {\n    @GET\n    public List<User> getUsers() { return dao.findAll(User.class); }\n}",
-    "ok_example": "@Path(\"/api/users\")\npublic class UserResource {\n    @GET\n    @Produces(MediaType.APPLICATION_JSON)\n    public List<User> getUsers() { return dao.findAll(User.class); }\n}"
+    "priority_reason": "RoutesMapping設定の誤りはAPI全体のルーティング失敗・404を引き起こす。@Pathアノテーションの誤使用はNablarchのアーキテクチャ原則に反し、意図通りに動作しない。",
+    "check_method": "RoutesMapping設定（routes.rb等）にURLとアクションクラス・メソッドの対応が正しく定義されているか。アクションクラスに@Produces(MediaType.APPLICATION_JSON)または@Consumesが設定されているか（Nablarchがサポートするアノテーション）。@Pathアノテーションをルーティング目的で使用していないか（Nablarchでは非対応）。コンポーネント定義（XML）でRoutesMapping設定が正しく行われているか。",
+    "ng_example": "// @Path をルーティング目的で使用（Nablarchでは動作しない）\n@Path(\"/api/users\")\npublic class UserAction {\n    @GET\n    public List<User> getUsers() { return dao.findAll(User.class); }\n}",
+    "ok_example": "// RoutesMapping（routes.rb等）でURLとアクションを紐付け\n// routes.rb 例:\n// get '/api/users', to: 'userAction#getUsers'\n\n// アクションクラス側\n@Produces(MediaType.APPLICATION_JSON)\npublic List<User> getUsers(HttpRequest req, ExecutionContext ctx) {\n    return UniversalDao.findAll(User.class);\n}",
+    "responsibility": "developer",
+    "review_target": "routes.rb等のRoutesMapping設定ファイル（URLとアクションクラス・メソッドの対応）、アクションクラスの@Produces/@Consumesアノテーション",
+    "framework_provided": "URLルーティング処理（RoutesMappingハンドラ）、リクエストJSONのパース（BodyConvertHandler）、Bean Validation実行（JaxRsBeanValidationHandler）、HTTPレスポンス変換（JaxRsResponseHandler）はFWが自動処理"
   },
   {
     "perspective_id": "REST-002",
@@ -417,7 +519,10 @@
     "priority_reason": "不正なステータスコードはクライアントのエラーハンドリングを破壊し、API コントラクトの信頼性を損なう。",
     "check_method": "作成成功時は 201、正常取得は 200、削除成功は 204 を返しているか。リソース未存在時は 404、バリデーションエラーは 400 を返しているか。例外発生時に 200 を返していないか（try-catch で握りつぶしていないか）。",
     "ng_example": "@POST\n@Path(\"/users\")\npublic String createUser(UserForm form) {\n    dao.insert(form);\n    return \"OK\"; // ステータスコード指定なし → 常に 200\n}",
-    "ok_example": "@POST\n@Path(\"/users\")\npublic Response createUser(UserForm form) {\n    dao.insert(form);\n    return Response.status(Response.Status.CREATED).build(); // 201\n}"
+    "ok_example": "@POST\n@Path(\"/users\")\npublic Response createUser(UserForm form) {\n    dao.insert(form);\n    return Response.status(Response.Status.CREATED).build(); // 201\n}",
+    "responsibility": "developer",
+    "review_target": "アクションクラスのHttpResponse/Response生成コード（ステータスコード設定箇所）",
+    "framework_provided": "HTTPレスポンスの送信処理はFW（JaxRsResponseHandler）が担当。実装者はステータスコードとレスポンスボディの内容を設定"
   },
   {
     "perspective_id": "REST-003",
@@ -429,7 +534,10 @@
     "priority_reason": "例外マッピングが統一されていないと、エラー時のレスポンス形式がランダムになり、クライアントのエラーハンドリングが不可能になる。",
     "check_method": "ExceptionMapper<T> を実装した例外マッピングクラスが存在するか。業務例外 → 400、システム例外 → 500 のマッピングが一貫しているか。エラーレスポンスの JSON 形式が全 API で統一されているか。",
     "ng_example": "@POST\npublic Response createUser(UserForm form) {\n    try {\n        service.create(form);\n    } catch (BusinessException e) {\n        // それぞれのメソッドで個別に例外処理 → 形式バラバラ\n        return Response.status(400).entity(\"Error: \" + e.getMessage()).build();\n    }\n}",
-    "ok_example": "// ExceptionMapper で一元管理\n@Provider\npublic class BusinessExceptionMapper implements ExceptionMapper<BusinessException> {\n    @Override\n    public Response toResponse(BusinessException e) {\n        ErrorResponse error = new ErrorResponse(\"VALIDATION_ERROR\", e.getMessage());\n        return Response.status(400).entity(error).build();\n    }\n}"
+    "ok_example": "// ExceptionMapper で一元管理\n@Provider\npublic class BusinessExceptionMapper implements ExceptionMapper<BusinessException> {\n    @Override\n    public Response toResponse(BusinessException e) {\n        ErrorResponse error = new ErrorResponse(\"VALIDATION_ERROR\", e.getMessage());\n        return Response.status(400).entity(error).build();\n    }\n}",
+    "responsibility": "developer",
+    "review_target": "ExceptionMapper実装クラス（業務例外→HTTPレスポンスのマッピング定義）",
+    "framework_provided": "ExceptionMapper自体の呼び出し機構はFWが提供。実装者はマッピング定義（業務例外→HTTPステータスコード・レスポンス形式）を実装"
   },
   {
     "perspective_id": "REST-004",
@@ -441,7 +549,10 @@
     "priority_reason": "API スキーマ未定義はクライアント実装の誤りを招き、統合テスト段階で大量のバグが発覚する。",
     "check_method": "openapi.yaml または swagger.json が存在し、最新状態か。リクエスト・レスポンスのフィールド定義（型・必須/任意・サンプル値）が記述されているか。nablarch-openapi-generator からコード生成を行っている場合、仕様とコードが乖離していないか。",
     "ng_example": "# API ドキュメント: なし（実装コードだけ存在）",
-    "ok_example": "# openapi.yaml\npaths:\n  /api/users:\n    post:\n      requestBody:\n        content:\n          application/json:\n            schema:\n              $ref: '#/components/schemas/UserRequest'"
+    "ok_example": "# openapi.yaml\npaths:\n  /api/users:\n    post:\n      requestBody:\n        content:\n          application/json:\n            schema:\n              $ref: '#/components/schemas/UserRequest'",
+    "responsibility": "developer",
+    "review_target": "openapi.yamlまたはswagger.json等のAPIスキーマ定義ファイル",
+    "framework_provided": "APIドキュメント自動生成はFWが標準提供しない。実装者がOpenAPI仕様に従ってドキュメントを作成・更新する"
   },
   {
     "perspective_id": "REST-005",
@@ -453,7 +564,10 @@
     "priority_reason": "REST API の認証欠如は全データの無制限アクセスを許す。特に /api/admin/* 等の管理 API での漏洩は致命的。",
     "check_method": "Authorization: Bearer <token> ヘッダの検証が実装されているか。JWT 署名検証・有効期限チェックが行われているか。保護リソースへの未認証アクセスが 401 を返すか（403 ではなく）。ロールによるアクセス制御が @RolesAllowed または同等で実装されているか。",
     "ng_example": "@GET\n@Path(\"/api/admin/users\")\npublic List<User> getAdminUsers() {\n    // 認証・認可チェックなし → 誰でもアクセス可能\n    return dao.findAll(User.class);\n}",
-    "ok_example": "@GET\n@Path(\"/api/admin/users\")\n@RolesAllowed(\"ADMIN\")\npublic List<User> getAdminUsers() {\n    return dao.findAll(User.class);\n}"
+    "ok_example": "@GET\n@Path(\"/api/admin/users\")\n@RolesAllowed(\"ADMIN\")\npublic List<User> getAdminUsers() {\n    return dao.findAll(User.class);\n}",
+    "responsibility": "developer",
+    "review_target": "JWTトークン検証ロジック実装、PermissionUtil/@RolesAllowed等の権限チェック実装",
+    "framework_provided": "認証・認可ハンドラの機構はFWが提供。実装者はトークン検証ロジックと権限定義を実装"
   },
   {
     "perspective_id": "REST-006",
@@ -465,7 +579,10 @@
     "priority_reason": "エラーフォーマットの不統一はクライアントのエラーハンドリングコードを複雑にし、フロントエンド・連携システムとの統合を困難にする。",
     "check_method": "エラーレスポンスに code（エラーコード）と message（説明）フィールドが存在するか。バリデーションエラーで複数フィールドのエラーをまとめて返せるか。HTTP ステータスコードとエラーコードが一貫した対応関係か。",
     "ng_example": "// エンドポイントによってフォーマットが異なる\n// /api/users POST エラー\n{\"error\": \"バリデーションエラー\"}\n// /api/orders POST エラー\n{\"status\": \"NG\", \"detail\": [{\"field\": \"amount\", \"msg\": \"必須\"}]}",
-    "ok_example": "// 全 API 統一フォーマット\n{\n  \"code\": \"VALIDATION_ERROR\",\n  \"message\": \"入力値に誤りがあります\",\n  \"details\": [\n    {\"field\": \"name\", \"code\": \"REQUIRED\", \"message\": \"氏名は必須です\"}\n  ]\n}"
+    "ok_example": "// 全 API 統一フォーマット\n{\n  \"code\": \"VALIDATION_ERROR\",\n  \"message\": \"入力値に誤りがあります\",\n  \"details\": [\n    {\"field\": \"name\", \"code\": \"REQUIRED\", \"message\": \"氏名は必須です\"}\n  ]\n}",
+    "responsibility": "developer",
+    "review_target": "ExceptionMapperのエラーレスポンスDTO定義、全APIのエラーレスポンスフィールド確認",
+    "framework_provided": "JSONシリアライズはFW（BodyConvertHandler）が実行。実装者はエラーレスポンスの形式（フィールド構造・エラーコード体系）の統一を担当"
   },
   {
     "perspective_id": "REST-007",
@@ -477,7 +594,10 @@
     "priority_reason": "バリデーションのない REST API は不正データの登録・処理エラーの原因となる。REST では JSP のような入力制御がないため特に重要。",
     "check_method": "リクエスト DTO クラスに Bean Validation アノテーションが定義されているか。@Valid アノテーションでバリデーションが実行されているか。バリデーションエラー時に 400 Bad Request と詳細メッセージが返されるか。",
     "ng_example": "@POST\npublic Response createUser(UserRequest request) {\n    // バリデーションなし → null や不正値がそのまま DB へ\n    dao.insert(request);\n    return Response.ok().build();\n}",
-    "ok_example": "@POST\npublic Response createUser(@Valid UserRequest request) {\n    dao.insert(request);\n    return Response.status(201).build();\n}\n\npublic class UserRequest {\n    @NotNull @Size(max = 100)\n    private String name;\n}"
+    "ok_example": "@POST\npublic Response createUser(@Valid UserRequest request) {\n    dao.insert(request);\n    return Response.status(201).build();\n}\n\npublic class UserRequest {\n    @NotNull @Size(max = 100)\n    private String name;\n}",
+    "responsibility": "developer",
+    "review_target": "リクエストDTOクラスのBean Validationアノテーション定義（@NotNull・@Size等）",
+    "framework_provided": "@Validアノテーション検出とバリデーション実行はFW（JaxRsBeanValidationHandler）が担当。実装者はDTOクラスへのアノテーション定義を担当"
   },
   {
     "perspective_id": "REST-008",
@@ -489,7 +609,10 @@
     "priority_reason": "Content-Type 検証の欠如はメディアタイプインジェクション・予期しない解析エラーの原因となる。",
     "check_method": "@Consumes(MediaType.APPLICATION_JSON) が POST/PUT メソッドに付与されているか。@Produces(MediaType.APPLICATION_JSON) が応答メソッドに付与されているか。JSON 以外の Content-Type で 415 エラーが返されるか。",
     "ng_example": "@POST\n// @Consumes 未指定 → 任意の Content-Type を受け入れる\npublic Response createUser(String body) { ... }",
-    "ok_example": "@POST\n@Consumes(MediaType.APPLICATION_JSON)\n@Produces(MediaType.APPLICATION_JSON)\npublic Response createUser(UserRequest request) { ... }"
+    "ok_example": "@POST\n@Consumes(MediaType.APPLICATION_JSON)\n@Produces(MediaType.APPLICATION_JSON)\npublic Response createUser(UserRequest request) { ... }",
+    "responsibility": "developer",
+    "review_target": "アクションクラスの@Producesと@Consumesアノテーション（Nablarchがサポートするアノテーション）",
+    "framework_provided": "Content-Type/Acceptヘッダのマッチング処理はFWが担当。実装者は@Produces/@Consumesで対応メディアタイプを宣言"
   },
   {
     "perspective_id": "REST-009",
@@ -501,7 +624,10 @@
     "priority_reason": "件数無制限の全件返却は大量データ時のタイムアウト・メモリ枯渇・クライアント障害の原因となる。",
     "check_method": "一覧系 API に limit パラメータ（またはデフォルト上限）が設定されているか。ページング情報（totalCount, page, pageSize）がレスポンスに含まれているか。最大返却件数の上限値（例: 1000件）が設定されているか。",
     "ng_example": "@GET\n@Path(\"/api/users\")\npublic List<User> getUsers() {\n    return UniversalDao.findAll(User.class); // 全件返却\n}",
-    "ok_example": "@GET\n@Path(\"/api/users\")\npublic PagedResponse<User> getUsers(\n        @QueryParam(\"page\") @DefaultValue(\"1\") int page,\n        @QueryParam(\"limit\") @DefaultValue(\"20\") int limit) {\n    Pagination pagination = new Pagination(page, Math.min(limit, 100));\n    List<User> users = UniversalDao.findAllBySqlFile(User.class, \"FIND_ALL\", pagination);\n    return new PagedResponse<>(users, pagination);\n}"
+    "ok_example": "@GET\n@Path(\"/api/users\")\npublic PagedResponse<User> getUsers(\n        @QueryParam(\"page\") @DefaultValue(\"1\") int page,\n        @QueryParam(\"limit\") @DefaultValue(\"20\") int limit) {\n    Pagination pagination = new Pagination(page, Math.min(limit, 100));\n    List<User> users = UniversalDao.findAllBySqlFile(User.class, \"FIND_ALL\", pagination);\n    return new PagedResponse<>(users, pagination);\n}",
+    "responsibility": "developer",
+    "review_target": "コレクション系アクションのページング条件実装コード（pageパラメータ・limitパラメータ受け取り）",
+    "framework_provided": "ページングクエリの生成はFWが提供。実装者はページング条件の受け取り・設定とデフォルト上限値の実装を担当"
   },
   {
     "perspective_id": "REST-010",
@@ -513,7 +639,10 @@
     "priority_reason": "冪等でない PUT/DELETE はリトライ時に重複処理・データ破壊を引き起こす。REST の設計原則として冪等性は重要。",
     "check_method": "DELETE で既に削除済みのリソースへのリクエストが 404 または 204 を返すか。PUT が存在しないリソースに対して 404 を返し、勝手に作成しないか。ネットワーク障害時のリトライを考慮した設計か。",
     "ng_example": "@DELETE\n@Path(\"/api/users/{id}\")\npublic Response deleteUser(@PathParam(\"id\") Long id) {\n    dao.deleteById(id); // 存在しない場合に例外で 500 → 冪等でない\n    return Response.ok().build();\n}",
-    "ok_example": "@DELETE\n@Path(\"/api/users/{id}\")\npublic Response deleteUser(@PathParam(\"id\") Long id) {\n    int deleted = dao.deleteById(id);\n    if (deleted == 0) return Response.status(404).build();\n    return Response.noContent().build(); // 204\n}"
+    "ok_example": "@DELETE\n@Path(\"/api/users/{id}\")\npublic Response deleteUser(@PathParam(\"id\") Long id) {\n    int deleted = dao.deleteById(id);\n    if (deleted == 0) return Response.status(404).build();\n    return Response.noContent().build(); // 204\n}",
+    "responsibility": "developer",
+    "review_target": "PUT/DELETEアクションクラスの実装ロジック（存在チェック・冪等性確保）",
+    "framework_provided": "HTTPメソッドのルーティングはFWが担当。冪等性の実現（同じリクエストを複数回実行した場合の結果の一致）は実装者の設計が必要"
   },
   {
     "perspective_id": "REST-011",
@@ -525,7 +654,10 @@
     "priority_reason": "CORS の過剰な許可（*）は悪意あるサイトからの API 呼び出しを可能にし、CSRF と組み合わせた攻撃のリスクが高まる。",
     "check_method": "Access-Control-Allow-Origin がホワイトリスト形式で設定されているか（* でないか）。Access-Control-Allow-Methods が最小限の HTTP メソッドに限定されているか。認証トークンを含む場合、Access-Control-Allow-Credentials: true と特定オリジンの組み合わせか。",
     "ng_example": "response.addHeader(\"Access-Control-Allow-Origin\", \"*\"); // 全オリジン許可\nresponse.addHeader(\"Access-Control-Allow-Credentials\", \"true\"); // 組み合わせ危険",
-    "ok_example": "String origin = request.getHeader(\"Origin\");\nif (ALLOWED_ORIGINS.contains(origin)) {\n    response.addHeader(\"Access-Control-Allow-Origin\", origin);\n}"
+    "ok_example": "String origin = request.getHeader(\"Origin\");\nif (ALLOWED_ORIGINS.contains(origin)) {\n    response.addHeader(\"Access-Control-Allow-Origin\", origin);\n}",
+    "responsibility": "developer",
+    "review_target": "CORSヘッダ設定コード（フィルタまたはアクション内のAccess-Control-*ヘッダ設定）",
+    "framework_provided": "CORS自動設定機能はFWが標準提供しない。実装者がフィルタかアクション内でAccess-Control-Allow-Origin等を設定"
   },
   {
     "perspective_id": "REST-012",
@@ -537,7 +669,10 @@
     "priority_reason": "ログなしでは本番障害の原因究明が不可能になる。一方、パスワードや個人情報のログ記録はセキュリティインシデントの原因となる。",
     "check_method": "アクセスログ（メソッド・URL・ステータス・処理時間）が INFO レベルで出力されているか。リクエストボディにパスワード・カード番号等が含まれる場合、マスキングが実装されているか。エラー発生時にはスタックトレースが ERROR レベルでログ出力されるか。",
     "ng_example": "log.info(\"request: \" + request.getBody()); // パスワード平文ログ",
-    "ok_example": "log.info(\"API: {} {} status={} time={}ms\",\n    request.getMethod(), request.getPath(),\n    response.getStatus(), elapsedMs);\n// パスワードフィールドはマスク済みオブジェクトをログ出力"
+    "ok_example": "log.info(\"API: {} {} status={} time={}ms\",\n    request.getMethod(), request.getPath(),\n    response.getStatus(), elapsedMs);\n// パスワードフィールドはマスク済みオブジェクトをログ出力",
+    "responsibility": "developer",
+    "review_target": "アクセスログ設定、アクションクラスのログ出力コード（機密情報マスキング含む）",
+    "framework_provided": "フレームワークレベルのアクセスログはFWが提供。業務的なリクエスト内容のログ出力（マスキング含む）は実装者が担当"
   },
   {
     "perspective_id": "REST-013",
@@ -549,7 +684,10 @@
     "priority_reason": "レート制限は外部公開 API では必須に近いが、内部 API では不要な場合もある。ただし、設計段階での検討は推奨される。",
     "check_method": "API ゲートウェイ（nginx / AWS API Gateway 等）でのレート制限が設定されているか。アプリケーションレベルでのリクエスト制限ハンドラが実装されているか。429 Too Many Requests のレスポンスが定義されているか。",
     "ng_example": "# レート制限なし → DDoS で即時ダウン",
-    "ok_example": "# nginx でのレート制限\nlimit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;\nlimit_req zone=api burst=20 nodelay;"
+    "ok_example": "# nginx でのレート制限\nlimit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;\nlimit_req zone=api burst=20 nodelay;",
+    "responsibility": "developer",
+    "review_target": "APIゲートウェイのレート制限設定（nginx/AWS API Gateway等）またはカスタムハンドラ実装",
+    "framework_provided": "レート制限機能はFW本体が標準提供しない。APIゲートウェイまたはカスタムハンドラで実装者が実装"
   },
   {
     "perspective_id": "REST-014",
@@ -561,7 +699,10 @@
     "priority_reason": "RESTful でない URL 設計はクライアント実装者の混乱を招き、API の一貫性を損なう。",
     "check_method": "リソース名が名詞複数形か（/users, /orders, /products）。動詞が URL に含まれていないか（/getUser, /createOrder は NG）。リソースの階層関係が URL で表現されているか（/users/{id}/orders）。",
     "ng_example": "GET  /getUsers         # 動詞が URL に入っている\nPOST /createUser       # 動詞が URL に入っている\nPOST /user/delete/{id} # HTTP メソッドと URL が不一致",
-    "ok_example": "GET    /api/users          # ユーザー一覧取得\nPOST   /api/users          # ユーザー作成\nGET    /api/users/{id}     # ユーザー取得\nPUT    /api/users/{id}     # ユーザー更新\nDELETE /api/users/{id}     # ユーザー削除"
+    "ok_example": "GET    /api/users          # ユーザー一覧取得\nPOST   /api/users          # ユーザー作成\nGET    /api/users/{id}     # ユーザー取得\nPUT    /api/users/{id}     # ユーザー更新\nDELETE /api/users/{id}     # ユーザー削除",
+    "responsibility": "developer",
+    "review_target": "RoutesMapping定義のURL設計（routes.rb等）、アクションクラス名",
+    "framework_provided": "URLルーティング解決はFWが担当。URL設計の妥当性（RESTful規約への準拠）の確認は実装者が担当"
   },
   {
     "perspective_id": "REST-015",
@@ -573,7 +714,10 @@
     "priority_reason": "バージョン管理のない API 変更は既存クライアントを突然壊す。複数クライアント（web/mobile/外部）が存在する場合に特に重要。",
     "check_method": "URL に /v1/ 等のバージョン番号が含まれているか。バージョンアップ時に旧バージョンが一定期間維持されるか。API 廃止予定が Deprecation ヘッダまたはドキュメントで通知されているか。",
     "ng_example": "# バージョン管理なし → 変更が即時に全クライアントに影響\nGET /api/users",
-    "ok_example": "# バージョン付き URL\nGET /api/v1/users   # 旧クライアント継続動作\nGET /api/v2/users   # 新フォーマット"
+    "ok_example": "# バージョン付き URL\nGET /api/v1/users   # 旧クライアント継続動作\nGET /api/v2/users   # 新フォーマット",
+    "responsibility": "developer",
+    "review_target": "RoutesMapping定義のURLバージョン設定（/v1/等）、旧バージョンAPIの維持状況",
+    "framework_provided": "バージョン管理機能はFWが標準提供しない。実装者がURLまたはヘッダでバージョン管理を設計・実装"
   },
   {
     "perspective_id": "REST-016",
@@ -585,6 +729,9 @@
     "priority_reason": "テストのない REST API はリファクタリング・変更時のデグレを検知できず、本番障害のリスクが高まる。",
     "check_method": "RestTestSupport または JUnit + REST クライアントでのテストが存在するか。正常レスポンスのステータスコード・ボディ構造がテストで検証されているか。認証エラー（401）・バリデーションエラー（400）のテストケースがあるか。",
     "ng_example": "// リソースクラスのテストなし",
-    "ok_example": "public class UserResourceTest extends RestTestSupport {\n    @Test\n    public void ユーザー作成_正常() {\n        RestMockHttpRequest request = post(\"/api/v1/users\")\n            .setBody(Map.of(\"name\", \"テスト太郎\"));\n        HttpResponse response = sendRequest(request);\n        assertStatusCode(201, response);\n    }\n}"
+    "ok_example": "public class UserResourceTest extends RestTestSupport {\n    @Test\n    public void ユーザー作成_正常() {\n        RestMockHttpRequest request = post(\"/api/v1/users\")\n            .setBody(Map.of(\"name\", \"テスト太郎\"));\n        HttpResponse response = sendRequest(request);\n        assertStatusCode(201, response);\n    }\n}",
+    "responsibility": "developer",
+    "review_target": "テストクラス（RestTestSupport等を継承したクラス）",
+    "framework_provided": "テストサポートクラス（RestTestSupport等）はFWが提供。テストケースの実装と正常系・バリデーションエラー・認証エラーのカバレッジは実装者が担当"
   }
 ]
