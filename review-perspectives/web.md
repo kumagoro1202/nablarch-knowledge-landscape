@@ -8,6 +8,8 @@
 **優先度**: MUST
 **優先度の理由**: ハンドラキューはリクエスト処理の根幹であり、順序誤りは認証・認可の無効化やCSRF対策の欠落につながる。
 **責任区分**: developer
+**universality**: universal
+**triggering_condition**: Nablarchのウェブ機能を使う（アクションクラスを実装する）
 **FW提供範囲**: 各ハンドラの実際の処理ロジックはFWが提供。実装者はハンドラの種類と順序の設定を担当
 **レビュー対象**: web-component-configuration.xml等のhandlerQueue設定
 **チェック方法**:
@@ -37,6 +39,8 @@ HttpCharacterEncodingHandler が最前列に配置されているか。HttpRespo
 **優先度**: MUST
 **優先度の理由**: セッション管理の不備はセッションハイジャック・固定攻撃・メモリ圧迫の原因となる。
 **責任区分**: developer
+**universality**: universal
+**triggering_condition**: Nablarchのウェブ機能を使う（アクションクラスを実装する）
 **FW提供範囲**: セッションストアへの実際の読み書き（往路・復路）はFW（セッション変数保存ハンドラ）が自動実行。実装者はSessionUtil APIを正しく使うことを担当
 **レビュー対象**: アクションクラスのSessionUtil.put()/get()/invalidate()呼び出しコード
 **チェック方法**:
@@ -59,6 +63,8 @@ SessionUtil.put(context, "loginUser", user); // 新セッションに格納
 **優先度**: MUST
 **優先度の理由**: CSRF 対策の欠落は、悪意あるサイトからの不正リクエストによるデータ改ざんを許す。金融・行政系システムでは致命的な脆弱性となる。
 **責任区分**: developer
+**universality**: universal
+**triggering_condition**: Nablarchのウェブ機能を使う（アクションクラスを実装する）
 **FW提供範囲**: CSRFトークンの生成・検証ロジック自体はFW（CsrfTokenHandler）が実行。実装者はハンドラ設定とJSPへの<n:csrf>タグ配置を担当
 **レビュー対象**: web-component-configuration.xmlのCsrfTokenHandler設定、JSPの<n:csrf>タグ配置
 **チェック方法**:
@@ -85,6 +91,8 @@ CsrfTokenHandler がハンドラキューに登録されているか。JSP の�
 **優先度**: MUST
 **優先度の理由**: クライアントサイドのみのバリデーションは Burp Suite 等のツールで容易にバイパス可能。不正入力のDB登録を防ぐためサーバーサイド検証は必須。
 **責任区分**: developer
+**universality**: universal
+**triggering_condition**: Nablarchのウェブ機能を使う（アクションクラスを実装する）
 **FW提供範囲**: バリデーション実行エンジン（アノテーション評価）はFWが提供。実装者はバリデーションアノテーション定義とvalidate()呼び出しを担当
 **レビュー対象**: アクションクラスのValidationUtil.validate()呼び出し、FormクラスのValidationアノテーション定義
 **チェック方法**:
@@ -113,6 +121,8 @@ public HttpResponse doPost(HttpRequest req, ExecutionContext ctx) {
 **優先度**: Should
 **優先度の理由**: エラー画面未定義は内部エラー情報のユーザー露出（スタックトレース表示）につながり、セキュリティリスクとなる。
 **責任区分**: developer
+**universality**: universal
+**triggering_condition**: Nablarchのウェブ機能を使う（アクションクラスを実装する）
 **FW提供範囲**: 例外捕捉とエラーページ遷移の基盤機構はFWが提供。実装者はエラーページのURL設定と全エラーコードのカバレッジを担当
 **レビュー対象**: web.xmlのerror-page設定、web-component-configuration.xmlのErrorHandler設定
 **チェック方法**:
@@ -140,6 +150,8 @@ web-component-configuration.xml に ErrorHandler でエラーページが設定�
 **優先度**: Should
 **優先度の理由**: アクションに業務ロジックが集中すると、テスト困難・変更影響範囲の拡大・コードの可読性低下が発生する。
 **責任区分**: developer
+**universality**: universal
+**triggering_condition**: Nablarchのウェブ機能を使う（アクションクラスを実装する）
 **FW提供範囲**: HTTPリクエスト/レスポンスの変換はFWが担当。業務ロジックの責務配置設計は実装者が担当
 **レビュー対象**: アクションクラス（業務ロジック混入確認）、サービスクラス・ドメインクラスの分離状況
 **チェック方法**:
@@ -171,6 +183,8 @@ public HttpResponse doPost(HttpRequest req, ExecutionContext ctx) {
 **優先度**: MUST
 **優先度の理由**: XSS は OWASP Top 10 の常連脆弱性。ユーザー入力の未エスケープ出力はスクリプトインジェクションによるアカウント乗っ取りにつながる。
 **責任区分**: developer
+**universality**: universal
+**triggering_condition**: Nablarchのウェブ機能を使う（アクションクラスを実装する）
 **FW提供範囲**: <n:write>タグ内部のHTMLエスケープ処理はFWが実行。実装者は適切なタグ（<n:write>または<c:out>）を選択することを担当
 **レビュー対象**: JSPファイルの動的値出力箇所（<n:write>タグ使用状況、EL式の直接使用確認）
 **チェック方法**:
@@ -196,6 +210,8 @@ ${user.comment}
 **優先度**: MUST
 **優先度の理由**: SQL インジェクションは全データ漏洩・削除・認証バイパスを引き起こす最も危険な脆弱性の一つ。
 **責任区分**: developer
+**universality**: universal
+**triggering_condition**: Nablarchのウェブ機能を使う（アクションクラスを実装する）
 **FW提供範囲**: バインドパラメータによる安全なSQL実行はFWが提供。実装者はSQL文字列連結を使わないことを担当
 **レビュー対象**: SQLファイル（.sql）のバインドパラメータ定義、UniversalDao呼び出し箇所
 **チェック方法**:
@@ -220,6 +236,8 @@ List<User> users = UniversalDao.findAllBySqlFile(User.class, "FIND_BY_NAME", con
 **優先度**: MUST
 **優先度の理由**: 認証・認可の欠落は不正アクセスによる情報漏洩・操作の直接的な原因となる。
 **責任区分**: developer
+**universality**: universal
+**triggering_condition**: Nablarchのウェブ機能を使う（アクションクラスを実装する）
 **FW提供範囲**: 認証チェックのハンドラ機構はFWが提供。実装者はハンドラ設定と権限チェック（PermissionUtil.permit()等）の呼び出しを担当
 **レビュー対象**: web-component-configuration.xmlのAuthenticationHandler設定、アクションクラスのPermissionUtil呼び出し
 **チェック方法**:
@@ -239,57 +257,6 @@ public HttpResponse doGet(HttpRequest req, ExecutionContext ctx) {
 }
 ```
 ---
-## WEB-010: フォーム二重送信防止トークンの確認
-**観点タイトル**: フォーム二重送信防止トークンの確認
-**観点詳細**: 更新フォームの二重サブミット（ダブルクリック・ブラウザ戻るボタン）を防ぐトークン機構が実装されているか確認する。Nablarch の DoubleSubmissionHandler 等の使用を確認する。
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/feature_details.html
-**優先度**: Should
-**優先度の理由**: 二重サブミットはデータの二重登録・注文の重複等の業務障害につながる。特に EC・申請系システムでは重要。
-**責任区分**: developer
-**FW提供範囲**: 二重サブミットトークンの生成・検証はFW（DoubleSubmissionHandler）が実行。実装者はハンドラ設定とJSPへの<n:token>タグ配置を担当
-**レビュー対象**: web-component-configuration.xmlのDoubleSubmissionHandler設定、JSPの<n:token>タグ配置
-**チェック方法**:
-DoubleSubmissionHandler がハンドラキューに登録されているか。フォームに二重サブミット防止トークンが含まれているか（<n:token> タグ等）。JavaScript による送信ボタン二重クリック防止も実装されているか。
-**NG例**:
-```xml
-<!-- 二重サブミット対策なし -->
-<form action="/order/register" method="POST">
-    <input type="submit" value="注文確定"/>
-</form>
-```
-**OK例**:
-```xml
-<form action="/order/register" method="POST">
-    <n:token/>  <%-- 二重サブミット防止トークン --%>
-    <input type="submit" value="注文確定"/>
-</form>
-```
----
-## WEB-011: ファイルアップロードのサイズ制限・拡張子検証確認
-**観点タイトル**: ファイルアップロードのサイズ制限・拡張子検証確認
-**観点詳細**: ファイルアップロード機能でサイズ上限・許可拡張子の検証が実装されているか確認する。悪意あるファイル（スクリプト等）のアップロードを防止する設計か確認する。
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/web/feature_details.html
-**優先度**: MUST
-**優先度の理由**: 制限なしのファイルアップロードはサーバーストレージの枯渇・悪意あるスクリプト実行・DoS 攻撃のベクタとなる。
-**責任区分**: developer
-**FW提供範囲**: マルチパートのパース処理はFW（MultipartHandler）が担当。実装者はサイズ上限設定と拡張子検証ロジックの実装を担当
-**レビュー対象**: MultipartHandlerのサイズ上限設定、アクションクラスの拡張子・MIMEタイプ検証コード
-**チェック方法**:
-MultipartHandler のサイズ上限設定（maxFileSize, maxRequestSize）が適切か。アップロードファイルの拡張子・MIMEタイプのホワイトリスト検証が実装されているか。アップロードファイルの保存先がドキュメントルート外か（Web からの直接アクセス不可）。
-**NG例**:
-```java
-// 拡張子チェックなし
-MultipartFile file = req.getFile("uploadFile");
-file.moveTo("/var/www/html/uploads/" + file.getOriginalFilename());
-```
-**OK例**:
-```
-MultipartFile file = req.getFile("uploadFile");
-String ext = FilenameUtils.getExtension(file.getOriginalFilename());
-if (!ALLOWED_EXTENSIONS.contains(ext)) throw new ValidationException("不正なファイル形式");
-file.moveTo("/var/data/uploads/" + UUID.randomUUID() + "." + ext);
-```
----
 ## WEB-012: 画面文言のハードコード排除とメッセージプロパティ管理
 **観点タイトル**: 画面文言のハードコード排除とメッセージプロパティ管理
 **観点詳細**: 画面表示文言・エラーメッセージが JSP にハードコードされておらず、メッセージプロパティファイルで管理されているか確認する。多言語対応や一括変更が可能な設計か確認する。
@@ -297,6 +264,8 @@ file.moveTo("/var/data/uploads/" + UUID.randomUUID() + "." + ext);
 **優先度**: Should
 **優先度の理由**: メッセージのハードコードは多言語対応を困難にし、文言変更時の修正漏れを招く。
 **責任区分**: developer
+**universality**: universal
+**triggering_condition**: Nablarchのウェブ機能を使う（アクションクラスを実装する）
 **FW提供範囲**: メッセージIDから文言への解決はFW（MessageUtil）が実行。実装者はメッセージ定義ファイルの作成と<n:message>タグの使用を担当
 **レビュー対象**: message.properties等のメッセージ定義ファイル、JSPの<n:message>タグ使用状況
 **チェック方法**:
@@ -311,29 +280,6 @@ file.moveTo("/var/data/uploads/" + UUID.randomUUID() + "." + ext);
 <n:message messageId="errors.required" arg0="氏名"/>
 ```
 ---
-## WEB-013: 大量データ表示時のページング・データ制限の確認
-**観点タイトル**: 大量データ表示時のページング・データ制限の確認
-**観点詳細**: 検索結果を全件取得・表示しておらず、適切なページング（limit/offset 等）で件数を制限しているか確認する。Nablarch の UniversalDao のページング機能が使われているか確認する。
-**根拠URL**: https://nablarch.github.io/docs/LATEST/doc/application_framework/application_framework/libraries/database/universal_dao.html
-**優先度**: Should
-**優先度の理由**: 全件取得はメモリ枯渇・レスポンス時間劣化・画面表示不能の原因となる。数万件のデータ返却でブラウザがフリーズすることも。
-**責任区分**: developer
-**FW提供範囲**: ページングクエリの生成・実行はFWが提供。実装者はページング条件（件数・ページ番号）の受け取りと設定を担当
-**レビュー対象**: UniversalDao呼び出しのページング条件設定コード（pageNumber・max等）
-**チェック方法**:
-UniversalDao.findAllBySqlFile() にページング条件（pageNumber, max）が設定されているか。件数上限（例: 1000件）が設定されているか。検索条件なし検索が実行できない制約があるか。
-**NG例**:
-```java
-// 全件取得（件数制限なし）
-List<User> users = UniversalDao.findAll(User.class);
-```
-**OK例**:
-```
-Pagination pagination = new Pagination(pageNo, 20); // 20件/ページ
-List<User> users = UniversalDao.findAllBySqlFile(
-    User.class, "FIND_USERS", condition, pagination);
-```
----
 ## WEB-014: Nablarch TestSupport を使ったウェブアクション単体テスト設計
 **観点タイトル**: Nablarch TestSupport を使ったウェブアクション単体テスト設計
 **観点詳細**: ウェブアクションのテストが HttpRequestTestSupport を使って実装されているか確認する。リクエスト送信・レスポンス検証・セッション状態の確認がテストで行われているか確認する。
@@ -341,6 +287,8 @@ List<User> users = UniversalDao.findAllBySqlFile(
 **優先度**: Should
 **優先度の理由**: テストのないウェブアクションはリグレッションに気づかず、セキュリティ修正の影響範囲把握も困難になる。
 **責任区分**: developer
+**universality**: universal
+**triggering_condition**: Nablarchのウェブ機能を使う（アクションクラスを実装する）
 **FW提供範囲**: テストサポートクラス（HttpRequestTestSupport等）はFWが提供。テストケースの実装と正常系・認証エラー系のカバレッジは実装者が担当
 **レビュー対象**: テストクラス（HttpRequestTestSupportを継承したクラス）
 **チェック方法**:
@@ -367,6 +315,8 @@ public class UserActionTest extends HttpRequestTestSupport {
 **優先度**: Should
 **優先度の理由**: セキュリティヘッダの欠如はクリックジャッキング・MIME スニッフィング等のブラウザレベルの攻撃に対して無防備になる。
 **責任区分**: developer
+**universality**: universal
+**triggering_condition**: Nablarchのウェブ機能を使う（アクションクラスを実装する）
 **FW提供範囲**: セキュリティヘッダを自動設定するFW機能は標準では提供されない。実装者がフィルタまたはアクション内でX-Frame-Options等を設定する必要がある
 **レビュー対象**: web.xmlのフィルタ設定、またはアクションクラスのresponse.setHeader()呼び出し
 **チェック方法**:
@@ -390,6 +340,8 @@ response.setHeader("X-Content-Type-Options", "nosniff");
 **優先度**: MUST
 **優先度の理由**: セッションの不完全な破棄は、ログアウト後に他ユーザーが同じブラウザで保護リソースにアクセスできてしまうリスクがある。
 **責任区分**: developer
+**universality**: universal
+**triggering_condition**: Nablarchのウェブ機能を使う（アクションクラスを実装する）
 **FW提供範囲**: セッションストアのクリア機構はFWが提供。実装者はSessionUtil.invalidate()の呼び出しタイミングとブラウザキャッシュ制御を担当
 **レビュー対象**: ログアウトアクションクラスのSessionUtil.invalidate()呼び出し、Cache-Controlヘッダ設定
 **チェック方法**:
