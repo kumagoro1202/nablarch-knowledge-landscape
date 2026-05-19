@@ -2,7 +2,7 @@
 
 **Version**: 1.0  
 **Created**: 2026-05-20  
-**Technology basis**: Technology selection report (cmd_474) — Rank 1: Cytoscape.js × ClassGraph
+**Technology basis**: Prior technology selection research — Rank 1: Cytoscape.js × ClassGraph
 
 ---
 

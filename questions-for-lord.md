@@ -14,7 +14,7 @@
 
 ---
 
-## Nablarch Class Visualization Tool (cmd_477 — 2026-05-20)
+## Nablarch Class Visualization Tool (2026-05-20)
 
 設計文書（`docs/visualization-tool/`）を作成しました。実装前に以下の点について判断をお願いします。
 

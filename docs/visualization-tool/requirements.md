@@ -2,7 +2,7 @@
 
 **Version**: 1.0  
 **Created**: 2026-05-20  
-**Based on**: Technology selection report (cmd_474), Class count measurement (cmd_476)
+**Based on**: Prior technology selection research and class count measurement results
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Version**: 1.0  
 **Created**: 2026-05-20  
-**Prerequisite**: Technology selection (cmd_474), Class count measurement (cmd_476), Requirements (requirements.md), Architecture (architecture.md)
+**Prerequisite**: Technology selection research, class count measurement results, Requirements (requirements.md), Architecture (architecture.md)
 
 ---
 

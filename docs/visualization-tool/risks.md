@@ -28,7 +28,7 @@
 **Probability**: High  
 **Impact**: High — renders the tool unusable if not addressed
 
-**Background**: Cytoscape.js documentation explicitly warns that performance degrades with graph size increases, especially for edges. The 2,681 node count exceeds the cmd_474 initial estimate (500–2,000) by ~30%.
+**Background**: Cytoscape.js documentation explicitly warns that performance degrades with graph size increases, especially for edges. The 2,681 node count exceeds the prior technology research initial estimate (500–2,000) by ~30%.
 
 **Mitigation strategies**:
 
