@@ -1,0 +1,20 @@
+# False Positive 除外リスト
+# このファイルの変更はPRを通すこと（直接mainコミット禁止）
+# 変更理由をコメントで明記すること
+
+# GitHub Actions / Git関連のメールアドレス（技術用途）
+noreply@anthropic.com
+noreply@github.com
+actions@github.com
+users.noreply.github.com
+
+# 公開技術記事の著者名（出典表記・公開情報）
+# unofficial-content-inventory.md の Fintan 記事著者クレジット。
+# 公表済みの著作物の出典表記であり非公開個人情報ではないため除外する。
+西川 武 (TIS)
+
+# リポジトリ名・スキル名としての正規参照（org-shogun 由来の固有名詞）
+# ※このシステム自体の設計を扱う内部ドキュメントを公開しない限り、原則ここは増やさない
+org-shogun
+shogun-hearing-to-decision-package
+shogun-project-status-analyzer
